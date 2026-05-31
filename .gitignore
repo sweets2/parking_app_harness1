@@ -1,0 +1,7 @@
+.claude/
+node_modules/
+dist/
+data/latest.json
+data/street-cleaning.json
+harness/metrics.jsonl
+harness/stuck/
