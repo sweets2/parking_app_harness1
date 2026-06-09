@@ -13,6 +13,7 @@
     "id": "F-D1",
     "name": "API Discovery",
     "status": "DONE",
+    "note": "Pre-seeded DONE before F-00 was formalized; depends_on preserved so fresh runs enforce correct order.",
     "order": 1,
     "depends_on": ["F-00"],
     "context_files": [],
