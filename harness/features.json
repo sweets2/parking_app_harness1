@@ -17,7 +17,8 @@
     "depends_on": ["F-00"],
     "context_files": [],
     "output_files": ["docs/api-discovery.md"],
-    "run_tests": false
+    "run_tests": false,
+    "pre_eval_command": "node -e \"const fs=require('fs'),dns=require('dns');const md=fs.readFileSync('docs/api-discovery.md','utf8');const m=md.match(/https?:\\/\\/[^\\s\\)>\\`'\\\"\\\\[\\\\]]+/);if(!m){console.error('VALIDATION FAIL: no URL found in docs/api-discovery.md');process.exit(1);}let u;try{u=new URL(m[0]);}catch(e){console.error('VALIDATION FAIL: invalid URL: '+m[0]);process.exit(1);}dns.resolve(u.hostname,function(err){if(err){console.error('VALIDATION FAIL: host does not resolve: '+u.hostname+' — '+err.message);process.exit(1);}else{console.log('PASS: URL valid, host resolves: '+u.hostname);process.exit(0);}});\""
   },
   {
     "id": "F-D2",
@@ -27,7 +28,8 @@
     "depends_on": ["F-D1"],
     "context_files": ["docs/api-discovery.md"],
     "output_files": ["docs/data-schema.md", "data/latest.json"],
-    "run_tests": false
+    "run_tests": false,
+    "pre_eval_command": "node -e \"const fs=require('fs');let raw;try{raw=fs.readFileSync('data/latest.json','utf8');}catch(e){console.error('VALIDATION FAIL: data/latest.json unreadable: '+e.message);process.exit(1);}let d;try{d=JSON.parse(raw);}catch(e){console.error('VALIDATION FAIL: not valid JSON: '+e.message);process.exit(1);}const errs=[];if(typeof d.fetched_at!=='string'||!d.fetched_at)errs.push('fetched_at missing or not a non-empty string');if(typeof d.count!=='number')errs.push('count missing or not a number');if(!Array.isArray(d.signs))errs.push('signs missing or not an array');else{if(d.signs.length===0)errs.push('signs array is empty — real fetched data required');if(typeof d.count==='number'&&d.count!==d.signs.length)errs.push('count ('+d.count+') does not match signs.length ('+d.signs.length+')');if(d.signs.length>0&&Object.keys(d.signs[0]).length<4)errs.push('signs[0] has fewer than 4 keys — appears to be a placeholder object');}if(errs.length>0){console.error('VALIDATION FAIL:\\n'+errs.map(function(e){return'  - '+e;}).join('\\n'));process.exit(1);}console.log('PASS: '+d.signs.length+' signs, fetched_at='+d.fetched_at);process.exit(0);\""
   },
   {
     "id": "F-00.5",

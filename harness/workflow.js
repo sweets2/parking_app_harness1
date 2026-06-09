@@ -112,6 +112,14 @@ const FILE_CHECK_SCHEMA = {
   },
 }
 
+const PRE_EVAL_VALIDATION_SCHEMA = {
+  type: 'object',
+  required: ['passed', 'output'],
+  properties: {
+    passed: { type: 'boolean' },
+    output: { type: 'string' },
+  },
+}
 
 const FRONT_MATTER_SCHEMA = {
   type: 'array',
@@ -126,8 +134,9 @@ const FRONT_MATTER_SCHEMA = {
       depends_on:        { type: 'array', items: { type: 'string' } },
       context_files:     { type: 'array', items: { type: 'string' } },
       output_files:      { type: 'array', items: { type: 'string' } },
-      post_build_command:{ type: 'string' },
-      run_tests:         { type: 'boolean' },
+      post_build_command: { type: 'string' },
+      pre_eval_command:   { type: 'string' },
+      run_tests:          { type: 'boolean' },
     },
   },
 }
@@ -333,6 +342,7 @@ const targetId         = target.id
 const targetName       = target.name
 const outputFiles      = target.output_files || []
 const postBuildCommand = target.post_build_command || null
+const preEvalCommand   = target.pre_eval_command   || null
 const runTests         = target.run_tests !== false
 const contextFilePaths = target.context_files || []
 
@@ -488,6 +498,26 @@ if (!fileCheck.allPresent) {
   log(`⚠ Creator did not write expected files: ${fileCheck.missing.join(', ')}`)
 }
 
+// ─── Phase 2.5: Pre-Eval Validation (discovery features with pre_eval_command) ─
+
+let preEvalResult = null
+
+if (preEvalCommand && fileCheck.allPresent) {
+  log(`Running pre-eval validation...`)
+  preEvalResult = await agent(
+    `Run this command in the project root (the directory containing package.json, not harness/):
+${preEvalCommand}
+
+Capture the full stdout and stderr combined. Return:
+- passed: true if the command exits with code 0, false otherwise
+- output: the complete combined stdout+stderr text`,
+    { schema: PRE_EVAL_VALIDATION_SCHEMA, label: `pre-eval-validate:${targetId}`, phase: 'Create' }
+  )
+  log(`Pre-eval validation: ${preEvalResult.passed ? 'PASS ✓' : 'FAIL ✗'} — ${preEvalResult.output.split('\n')[0]}`)
+} else if (preEvalCommand && !fileCheck.allPresent) {
+  preEvalResult = { passed: false, output: `Skipped — required output files missing: ${fileCheck.missing.join(', ')}` }
+}
+
 // ─── Phase 3: Verify ────────────────────────────────────────────────────────
 
 phase('Verify')
@@ -580,10 +610,19 @@ ${featureSpec}
 
 === OUTPUT FILES ===
 ${writtenFiles}
+${preEvalResult ? `
+=== DETERMINISTIC VALIDATION RESULTS ===
+${preEvalResult.passed
+  ? `PASS ✓ — ${preEvalResult.output}`
+  : `FAIL ✗ — Structural validation failed:
+${preEvalResult.output}
+
+IMPORTANT: This result is deterministic (not LLM-based). You MUST issue FAIL or NEEDS-REVISION — you may NOT issue PASS while this validation is failing. Add each validation failure to your failures array verbatim.`
+}` : ''}
 
 Evaluate whether the documentation is accurate and complete.
-PASS if: all required output files exist and contain the information described in the spec.
-FAIL if: any output file is missing, or key required information (e.g. API URL, field names) is absent or clearly wrong.
+PASS if: all required output files exist and contain the information described in the spec${preEvalResult ? ', AND the deterministic validation above passed' : ''}.
+FAIL if: any output file is missing, or key required information (e.g. API URL, field names) is absent or clearly wrong${preEvalResult && !preEvalResult.passed ? ', OR the deterministic validation above failed' : ''}.
 NEEDS-REVISION if: files exist but information is incomplete or vague.
 
 Issue your verdict now.`
@@ -643,16 +682,33 @@ ${verdict.failures && verdict.failures.length > 0
   : ''}
 
 === TEST RESULTS ===
-${fmtTestResults(testResult)}${fmtRegressionAttribution(baselineResult, testResult, owningTestFiles)}
+${!runTests && preEvalResult
+  ? (preEvalResult.passed
+    ? `Structural validation: PASS ✓\n${preEvalResult.output}`
+    : `Structural validation: FAIL ✗\n${preEvalResult.output}\n\nFix the above structural failures in your output files.`)
+  : fmtTestResults(testResult) + fmtRegressionAttribution(baselineResult, testResult, owningTestFiles)
+}
 
 === AUTHORITATIVE FEATURE SPEC ===
 ${featureSpec}`,
     { label: `revise:${targetId}:r${revision}`, phase: 'Evaluate' }
   )
 
-  // Re-run tests after revision
-  testResult = await agent(
-    `Run the parking app test suite in the project root (directory containing package.json, not harness/).
+  // Re-run tests after revision (or re-run pre-eval validation for discovery features)
+  if (!runTests && preEvalCommand) {
+    preEvalResult = await agent(
+      `Run this command in the project root (the directory containing package.json, not harness/):
+${preEvalCommand}
+
+Capture the full stdout and stderr combined. Return:
+- passed: true if the command exits with code 0, false otherwise
+- output: the complete combined stdout+stderr text`,
+      { schema: PRE_EVAL_VALIDATION_SCHEMA, label: `pre-eval-revalidate:${targetId}:r${revision}`, phase: 'Evaluate' }
+    )
+    log(`Re-verify r${revision}: pre-eval ${preEvalResult.passed ? 'PASS ✓' : 'FAIL ✗'} — ${preEvalResult.output.split('\n')[0]}`)
+  } else {
+    testResult = await agent(
+      `Run the parking app test suite in the project root (directory containing package.json, not harness/).
 
 Run these steps in order:
 ${featureTestFiles.length > 0
@@ -668,10 +724,10 @@ Return the same fields as the initial verify run:
 - featureTestsPassed / featureTestOutput / featurePassedCount / featureFailedCount / featureTestFailures ${featureTestFiles.length > 0 ? '(from step 1)' : '(omit — no feature test files)'}
 - testsPassed / testOutput / passedCount / failedCount / testFailures (from npm test)
 - typecheckPassed / typecheckOutput / typecheckErrors (from typecheck)`,
-    { schema: TEST_SCHEMA, label: `reverify:${targetId}:r${revision}`, phase: 'Evaluate' }
-  )
-
-  log(`Re-verify r${revision}: Feature ${testResult.featureTestsPassed == null ? 'n/a' : testResult.featureTestsPassed ? 'PASS ✓' : 'FAIL ✗'} | Suite ${testResult.testsPassed ? 'PASS ✓' : 'FAIL ✗'} | Typecheck ${testResult.typecheckPassed ? 'PASS ✓' : 'FAIL ✗'}`)
+      { schema: TEST_SCHEMA, label: `reverify:${targetId}:r${revision}`, phase: 'Evaluate' }
+    )
+    log(`Re-verify r${revision}: Feature ${testResult.featureTestsPassed == null ? 'n/a' : testResult.featureTestsPassed ? 'PASS ✓' : 'FAIL ✗'} | Suite ${testResult.testsPassed ? 'PASS ✓' : 'FAIL ✗'} | Typecheck ${testResult.typecheckPassed ? 'PASS ✓' : 'FAIL ✗'}`)
+  }
   metricTestRuns.push({ revision, featureTestsPassed: testResult.featureTestsPassed ?? null, featurePassed: testResult.featurePassedCount ?? null, featureFailed: testResult.featureFailedCount ?? null, passed: testResult.passedCount ?? null, failed: testResult.failedCount ?? null, typecheckPassed: testResult.typecheckPassed })
 
   // Re-read what the Reviser wrote — feeds the next iteration's evaluator
