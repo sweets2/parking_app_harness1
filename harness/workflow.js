@@ -93,6 +93,39 @@ function fmtRegressionAttribution(baseline, currentResult, owningFiles) {
   return lines.join('\n')
 }
 
+// Strips sections from contextContent whose file paths overlap with outputFiles.
+// Output files are already provided fresh in the "CURRENT IMPLEMENTATION" block of the
+// Reviser prompt, so keeping a stale copy in the context block would give the Reviser
+// two contradictory versions of the same file. This deduplication ensures each file
+// appears in exactly one place — the fresh writtenFiles block wins.
+function filterContextForReviser(contextContent, outputFiles) {
+  if (!contextContent || outputFiles.length === 0) return contextContent
+  const outputSet = new Set(outputFiles)
+  // Split on section headers: "=== FILE: <path> ==="
+  const sections = contextContent.split(/(=== FILE: [^\n]+ ===)/)
+  const kept = []
+  let i = 0
+  while (i < sections.length) {
+    const header = sections[i]
+    const headerMatch = header.match(/^=== FILE: (.+?) ===/)
+    if (!headerMatch) {
+      // Leading text before the first header (e.g. "(no context files)")
+      kept.push(header)
+      i++
+      continue
+    }
+    const filePath = headerMatch[1].trim()
+    const body = sections[i + 1] ?? ''
+    if (!outputSet.has(filePath)) {
+      kept.push(header)
+      kept.push(body)
+    }
+    i += 2
+  }
+  const result = kept.join('')
+  return result.trim() || '(all context files are covered by the current implementation block)'
+}
+
 const VERDICT_SCHEMA = {
   type: 'object',
   required: ['result', 'brief', 'failures'],
@@ -788,7 +821,7 @@ Issue your verdict now.`
 ${agentMd}
 
 === CONTEXT FILES ===
-${contextContent}
+${filterContextForReviser(contextContent, outputFiles)}
 
 === CURRENT IMPLEMENTATION ===
 ${writtenFiles}
