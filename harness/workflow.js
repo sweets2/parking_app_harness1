@@ -751,7 +751,7 @@ Issue your verdict now.`
 ${agentMd}
 
 === FEATURE SPEC ===
-${featureSpec}
+${featureSpec}${preflightNotes ? `\n\n## Pre-flight Spec Notes\nThe spec linter flagged these ambiguities before the creator ran. The creator was aware of them — factor this in before flagging related implementation choices as wrong:\n${preflight.issues.map(i => `- ${i.text}`).join('\n')}` : ''}
 
 === IMPLEMENTATION ===
 ${writtenFiles}
