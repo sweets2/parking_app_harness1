@@ -681,7 +681,13 @@ Return:
   log(`Feature: ${testResult.featureTestsPassed == null ? 'n/a' : testResult.featureTestsPassed ? 'PASS ✓' : 'FAIL ✗'} | Suite: ${testResult.testsPassed ? 'PASS ✓' : 'FAIL ✗'} | Typecheck: ${testResult.typecheckPassed ? 'PASS ✓' : 'FAIL ✗'}`)
   log(`Tokens spent: ${budget.spent().toLocaleString()}`)
 }
-metricTestRuns.push({ revision: 0, featureTestsPassed: testResult.featureTestsPassed ?? null, featurePassedCount: testResult.featurePassedCount ?? null, featureFailedCount: testResult.featureFailedCount ?? null, passed: testResult.passedCount ?? null, failed: testResult.failedCount ?? null, typecheckPassed: testResult.typecheckPassed })
+// Discovery features with pre_eval_command record preEvalResult (passed/failed binary); pure
+// discovery features skip (no test data); test features record the full npm-test counts.
+if (!runTests && preEvalCommand) {
+  metricTestRuns.push({ revision: 0, featureTestsPassed: null, featurePassedCount: null, featureFailedCount: null, passed: preEvalResult.passed ? 1 : 0, failed: preEvalResult.passed ? 0 : 1, typecheckPassed: null })
+} else if (runTests) {
+  metricTestRuns.push({ revision: 0, featureTestsPassed: testResult.featureTestsPassed ?? null, featurePassedCount: testResult.featurePassedCount ?? null, featureFailedCount: testResult.featureFailedCount ?? null, passed: testResult.passedCount ?? null, failed: testResult.failedCount ?? null, typecheckPassed: testResult.typecheckPassed })
+}
 
 // ─── Phase 4: Evaluate ──────────────────────────────────────────────────────
 
@@ -842,7 +848,13 @@ Return the same fields as the initial verify run:
     )
     log(`Re-verify r${revision}: Feature ${testResult.featureTestsPassed == null ? 'n/a' : testResult.featureTestsPassed ? 'PASS ✓' : 'FAIL ✗'} | Suite ${testResult.testsPassed ? 'PASS ✓' : 'FAIL ✗'} | Typecheck ${testResult.typecheckPassed ? 'PASS ✓' : 'FAIL ✗'}`)
   }
-  metricTestRuns.push({ revision, featureTestsPassed: testResult.featureTestsPassed ?? null, featurePassedCount: testResult.featurePassedCount ?? null, featureFailedCount: testResult.featureFailedCount ?? null, passed: testResult.passedCount ?? null, failed: testResult.failedCount ?? null, typecheckPassed: testResult.typecheckPassed })
+  // Same logic as the initial revision-0 push: discovery+preEvalCommand → preEvalResult;
+  // pure discovery → skip; test features → testResult counts.
+  if (!runTests && preEvalCommand) {
+    metricTestRuns.push({ revision, featureTestsPassed: null, featurePassedCount: null, featureFailedCount: null, passed: preEvalResult.passed ? 1 : 0, failed: preEvalResult.passed ? 0 : 1, typecheckPassed: null })
+  } else if (runTests) {
+    metricTestRuns.push({ revision, featureTestsPassed: testResult.featureTestsPassed ?? null, featurePassedCount: testResult.featurePassedCount ?? null, featureFailedCount: testResult.featureFailedCount ?? null, passed: testResult.passedCount ?? null, failed: testResult.failedCount ?? null, typecheckPassed: testResult.typecheckPassed })
+  }
 
   // Re-read what the Reviser wrote — feeds the next iteration's evaluator
   writtenFiles = await agent(
