@@ -152,6 +152,12 @@ STUCK_CONTENT_END`,
   return { blocked: true, feature: featureId, reason, ...returnExtra }
 }
 
+const FILE_HASHES_SCHEMA = {
+  type: 'object',
+  required: ['hashes'],
+  properties: { hashes: { type: 'string' } },
+}
+
 const VERDICT_SCHEMA = {
   type: 'object',
   required: ['result', 'brief', 'failures'],
@@ -760,6 +766,12 @@ let revision = 0
 let noChangeDetected = false
 const MAX_REVISIONS = 2
 
+const hashFilesPrompt = `Run in the project root: sha256sum ${outputFiles.join(' ')} 2>/dev/null | sort\nReturn the raw stdout as "hashes".`
+let prevHashes = (await agent(
+  hashFilesPrompt,
+  { schema: FILE_HASHES_SCHEMA, label: `hash-output:${targetId}:initial`, phase: 'Evaluate' }
+)).hashes
+
 while (revision <= MAX_REVISIONS) {
 
   const evaluatorPrompt = !runTests
@@ -859,21 +871,24 @@ ${featureSpec}`,
     { label: `revise:${targetId}:r${revision}`, phase: 'Evaluate' }
   )
 
-  // No-change short-circuit: re-read output files immediately after the Reviser.
-  // If the Reviser wrote nothing different, skip the verifier + next evaluator and block
-  // immediately — saves up to 2 agent calls per stalled revision cycle.
-  // This read also replaces the end-of-loop read, so there is no extra cost when the
-  // Reviser does make changes.
-  const prevWrittenFiles = writtenFiles
-  writtenFiles = await agent(
-    READ_FILES_PROMPT,
-    { label: `read-output:${targetId}:r${revision}`, phase: 'Evaluate' }
-  )
-  if (writtenFiles === prevWrittenFiles) {
+  // No-change short-circuit: hash output files to detect Reviser stalls deterministically.
+  // Comparing sha256 of on-disk bytes avoids LLM formatting variation that would make
+  // a string-equality check non-deterministic. The LLM file-read only runs when hashes
+  // confirm something actually changed — saving it on stall.
+  const currHashes = (await agent(
+    hashFilesPrompt,
+    { schema: FILE_HASHES_SCHEMA, label: `hash-check:${targetId}:r${revision}`, phase: 'Evaluate' }
+  )).hashes
+  if (currHashes === prevHashes) {
     log(`⚠ Reviser r${revision} made no file changes — short-circuiting to BLOCKED`)
     noChangeDetected = true
     break
   }
+  prevHashes = currHashes
+  writtenFiles = await agent(
+    READ_FILES_PROMPT,
+    { label: `read-output:${targetId}:r${revision}`, phase: 'Evaluate' }
+  )
 
   // Re-run tests after revision (or re-run pre-eval validation for discovery features)
   if (!runTests && preEvalCommand) {
