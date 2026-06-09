@@ -60,4 +60,12 @@ while (true) {
   }
 }
 
-return { completed, blocked: blockedFeatures }
+const finalBudget = budget.spent()
+log(`Total output tokens (budget.spent): ${finalBudget.toLocaleString()} — run complete-build-record.js with task notification data to record true subagentTokens.`)
+await agent(
+  `Run this exact bash command and report the output:
+node harness/write-build-record.js --budget-spent ${finalBudget} --completed ${completed} --blocked '${JSON.stringify(blockedFeatures)}'`,
+  { label: 'write-build-record', phase: 'Build' }
+)
+
+return { completed, blocked: blockedFeatures, budgetSpent: finalBudget }
