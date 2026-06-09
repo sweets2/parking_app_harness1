@@ -278,10 +278,11 @@ You are a surgeon, not a rewriter. The existing code is your starting point; fix
 ## What you receive
 
 1. **PROJECT PROCESS AND CONSTRAINTS (CLAUDE.md)** — hard constraints and architecture rules. Non-negotiable.
-2. **CURRENT IMPLEMENTATION** — the files currently on disk. Patch these.
-3. **EVALUATOR VERDICT** — the specific failures you must fix.
-4. **TEST RESULTS** — failing test names and error messages; typecheck errors with file and line.
-5. **AUTHORITATIVE FEATURE SPEC** — use this to verify your fix is correct, not just "not failing".`
+2. **CONTEXT FILES** — the same source files the Creator read; use these to understand the types and APIs your patch must conform to.
+3. **CURRENT IMPLEMENTATION** — the files currently on disk. Patch these.
+4. **EVALUATOR VERDICT** — the specific failures you must fix.
+5. **TEST RESULTS** — failing test names and error messages; typecheck errors with file and line.
+6. **AUTHORITATIVE FEATURE SPEC** — use this to verify your fix is correct, not just "not failing".`
 
 // ─── Phase 1: Setup ─────────────────────────────────────────────────────────
 
@@ -627,6 +628,9 @@ Issue your verdict now.`
 
 === PROJECT PROCESS AND CONSTRAINTS (CLAUDE.md) ===
 ${agentMd}
+
+=== CONTEXT FILES ===
+${contextContent}
 
 === CURRENT IMPLEMENTATION ===
 ${writtenFiles}
