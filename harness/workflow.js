@@ -3,7 +3,7 @@ export const meta = {
   description: 'Builds one parking app feature using the creator/evaluator loop',
   phases: [
     { title: 'Setup',    detail: 'Read spec front matter, select target, assemble context' },
-    { title: 'Validate', detail: 'Check spec is well-formed and has test cases' },
+    { title: 'Validate', detail: 'Check spec is well-formed, has test cases, and passes quality lint' },
     { title: 'Baseline', detail: 'Run owning feature tests before mutation to record regression baseline' },
     { title: 'Create',   detail: 'Creator agent writes tests then implementation' },
     { title: 'Verify',   detail: 'Run npm test and npm run typecheck' },
@@ -167,6 +167,25 @@ const STATIC_READS_SCHEMA = {
   },
 }
 
+const PREFLIGHT_SCHEMA = {
+  type: 'object',
+  required: ['verdict', 'issues'],
+  properties: {
+    verdict: { type: 'string', enum: ['PASS', 'WARN', 'BLOCK'] },
+    issues: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['severity', 'text'],
+        properties: {
+          severity: { type: 'string', enum: ['ERROR', 'WARNING'] },
+          text:     { type: 'string' },
+        },
+      },
+    },
+  },
+}
+
 // ─── Prompt templates (embedded) ────────────────────────────────────────────
 // These are static across all features. Embedding them eliminates 3 agent reads
 // per run. To change agent persona or output format, edit these strings.
@@ -292,6 +311,35 @@ You are a surgeon, not a rewriter. The existing code is your starting point; fix
 4. **EVALUATOR VERDICT** — the specific failures you must fix.
 5. **TEST RESULTS** — failing test names and error messages; typecheck errors with file and line.
 6. **AUTHORITATIVE FEATURE SPEC** — use this to verify your fix is correct, not just "not failing".`
+
+const SPEC_LINTER_TEMPLATE = `# Spec Quality Linter
+
+You are a pre-flight linter. Read the feature spec and CLAUDE.md constraints below and return a structured verdict.
+
+## Your job
+
+Check the spec for problems that will predictably cause the Creator to fail or require revision. Be pragmatic — flag real structural gaps, not stylistic preferences.
+
+## BLOCK conditions (severity: ERROR — return verdict: "BLOCK" if any apply)
+
+1. An exported function named in the spec has no TypeScript signature (parameter names, types, return type all missing).
+2. A THEN clause contains only vague language with no concrete expected value — e.g. "should return a valid result", "truthy", "non-null", "something sensible". A concrete value is a specific type, literal, array shape, or named constant.
+3. The spec explicitly requires something that CLAUDE.md prohibits for this module type — e.g. calling \`new Date()\` inside a pure logic module (\`shared/parking-logic.ts\`), accessing \`localStorage\` at module scope in \`shared/storage.ts\`, or importing \`L.*\` (Leaflet) outside \`app/map.ts\`.
+4. The number of Given/When/Then test cases is fewer than the number of exported functions described in the spec (some exported functions have no test coverage at all).
+
+## WARN conditions (severity: WARNING — return verdict: "WARN" if any apply but none are BLOCK)
+
+1. A behavioral description mentions an edge case that has no corresponding Given/When/Then test.
+2. Tests involve time-sensitive logic but don't reference fixture constants (e.g. \`NOW_STABLE\`, \`NOW_AFTER_EXPIRED\`, \`FETCH_TIME\`) — instead using literal dates or calling \`new Date()\` in test assertions.
+3. This is a mutation feature (output_files includes a file already owned by another feature) but the spec does not state what existing behavior is preserved vs changed.
+4. A function's behavioral description is ambiguous enough that two different, reasonable implementations could both claim to satisfy it.
+
+## Output rules
+
+- Return \`"PASS"\` with empty issues array if none of the above apply.
+- Return \`"WARN"\` with WARNING-severity issues if only warnings triggered.
+- Return \`"BLOCK"\` with ERROR-severity issues (include any WARNINGs too) if any BLOCK condition triggered.
+- Be specific in issue text: name the function, the test case, or the exact clause that is problematic.`
 
 // ─── Phase 1: Setup ─────────────────────────────────────────────────────────
 
@@ -446,6 +494,59 @@ node -e "const d=JSON.parse(require('fs').readFileSync('harness/features.json','
   log('Spec valid ✓')
 }
 
+// ─── Phase 1.55: Spec Quality Lint ─────────────────────────────────────────
+
+let preflight = null
+
+if (runTests) {
+  const isMutationHint = outputFiles.some(file =>
+    features.some(f => f.status === 'DONE' && (f.output_files || []).includes(file))
+  )
+  const specLinterPayload = `=== OUTPUT FILES ===
+${outputFiles.join('\n')}
+
+=== IS MUTATION FEATURE ===
+${isMutationHint ? 'Yes — output_files includes at least one file already written by a DONE feature.' : 'No — all output files are new.'}
+
+=== CLAUDE.md CONSTRAINTS ===
+${agentMd}
+
+=== FEATURE SPEC ===
+${featureSpec}`
+
+  preflight = await agent(
+    `${SPEC_LINTER_TEMPLATE}\n\n${specLinterPayload}`,
+    { schema: PREFLIGHT_SCHEMA, label: `spec-lint:${targetId}`, phase: 'Validate', model: 'claude-haiku-4-5-20251001' }
+  )
+
+  if (preflight.verdict === 'BLOCK') {
+    const errorList = preflight.issues.map(i => `- [${i.severity}] ${i.text}`).join('\n')
+    log(`Spec quality BLOCK — ${preflight.issues.filter(i => i.severity === 'ERROR').length} error(s) found`)
+    preflight.issues.filter(i => i.severity === 'ERROR').forEach(i => log(`  ✗ ${i.text}`))
+    const blockedLintStuck = `# ${targetId} — Blocked at spec quality lint\n\n## Reason\nSpec quality linter found structural problems before the Creator ran.\n\n## Issues\n${errorList}`
+    await parallel([
+      () => agent(
+        `Run these two commands in the project root:
+node -e "const fs=require('fs'),p='harness/features.json',d=JSON.parse(fs.readFileSync(p,'utf8'));const f=d.find(f=>f.id==='${targetId}');if(!f)throw new Error('Feature not found');f.status='BLOCKED';fs.writeFileSync(p,JSON.stringify(d,null,2)+'\\n');"
+node -e "const d=JSON.parse(require('fs').readFileSync('harness/features.json','utf8'));const f=d.find(f=>f.id==='${targetId}');if(!f||f.status!=='BLOCKED')throw new Error('Verification failed: '+f?.status);console.log('Verified '+f.id+' = '+f.status);"`,
+        { label: 'mark-blocked-lint', phase: 'Validate' }
+      ),
+      () => agent(
+        `Write to harness/stuck/${targetId}_stuck_reason.md (create file, overwrite if exists):\n${blockedLintStuck}`,
+        { label: 'write-stuck-lint', phase: 'Validate' }
+      ),
+    ])
+    return { blocked: true, feature: targetId, reason: 'Spec quality lint: ' + preflight.issues.filter(i => i.severity === 'ERROR').map(i => i.text).join('; ') }
+  }
+
+  if (preflight.verdict === 'WARN') {
+    log(`Spec quality WARN — ${preflight.issues.length} warning(s) injected into Creator prompt`)
+    preflight.issues.forEach(i => log(`  ⚠ ${i.text}`))
+  } else {
+    log('Spec quality lint PASS ✓')
+  }
+}
+
 // ─── Phase 1.6: Mutation Baseline ──────────────────────────────────────────
 
 let baselineResult = null
@@ -471,6 +572,10 @@ Return results.`,
 
 phase('Create')
 
+const preflightNotes = (preflight && preflight.issues && preflight.issues.length > 0)
+  ? `\n\n## Pre-flight Spec Notes\nThe spec linter flagged potential ambiguities. Be alert to these when writing tests and implementation:\n${preflight.issues.map(i => `- ${i.text}`).join('\n')}`
+  : ''
+
 await agent(
   `${CREATOR_TEMPLATE}
 
@@ -478,7 +583,7 @@ await agent(
 ${agentMd}
 
 === FEATURE SPEC ===
-${featureSpec}
+${featureSpec}${preflightNotes}
 
 === CONTEXT FILES ===
 ${contextContent}
@@ -752,14 +857,16 @@ log(`Tokens spent: ${budget.spent().toLocaleString()}`)
 phase('Update')
 
 const metricsRecord = JSON.stringify({
-  feature:          targetId,
-  name:             targetName,
-  verdict:          verdict ? verdict.result : 'BLOCKED',
-  revisions:        revision,
-  tokenCost:        budget.spent() - tokensAtStart,
+  feature:           targetId,
+  name:              targetName,
+  verdict:           verdict ? verdict.result : 'BLOCKED',
+  revisions:         revision,
+  tokenCost:         budget.spent() - tokensAtStart,
   evaluatorVerdicts: metricVerdicts,
-  testRuns:         metricTestRuns,
-  failures:         metricFailures,
+  testRuns:          metricTestRuns,
+  failures:          metricFailures,
+  preflight_verdict: preflight ? preflight.verdict : (runTests ? 'skipped' : 'n/a'),
+  preflight_issues:  preflight ? preflight.issues : [],
 })
 await agent(
   `Append this line to the file harness/metrics.jsonl (create it if it does not exist):
