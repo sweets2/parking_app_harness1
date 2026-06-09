@@ -824,14 +824,15 @@ Capture the full stdout and stderr combined. Return:
       `Run the parking app test suite in the project root (directory containing package.json, not harness/).
 
 Run these steps in order:
+1. test -d node_modules || npm install
 ${featureTestFiles.length > 0
-  ? `1. npx vitest run ${featureTestFiles.join(' ')}
+  ? `2. npx vitest run ${featureTestFiles.join(' ')}
    (Feature tests only)
-2. npm test
+3. npm test
    (Full suite)
-3. npm run typecheck`
-  : `1. npm test
-2. npm run typecheck`}
+4. npm run typecheck`
+  : `2. npm test
+3. npm run typecheck`}
 
 Return the same fields as the initial verify run:
 - featureTestsPassed / featureTestOutput / featurePassedCount / featureFailedCount / featureTestFailures ${featureTestFiles.length > 0 ? '(from step 1)' : '(omit — no feature test files)'}
