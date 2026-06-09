@@ -20,7 +20,21 @@ node -e "const fs=require('fs'),p='harness/features.json',d=JSON.parse(fs.readFi
   )
 }
 
+// Default 5M output-token cap; override per-run with args: { maxTokens: N }
+const budgetCap = (args && args.maxTokens) || 5_000_000
+
 while (true) {
+  // Hard stop when the accumulated output token count hits the cap
+  if (budgetCap && budget.spent() >= budgetCap) {
+    log(`Token cap reached (${budget.spent().toLocaleString()} / ${budgetCap.toLocaleString()}) — stopping.`)
+    break
+  }
+  // Guard for +Nk prompt directive: stop before starting a new feature if < 50k remain
+  if (budget.total && budget.remaining() < 50_000) {
+    log(`Low budget (${Math.round(budget.remaining() / 1000)}k remaining) — stopping before next feature.`)
+    break
+  }
+
   const result = await workflow({ scriptPath: 'harness/workflow.js' })
 
   if (!result) {
