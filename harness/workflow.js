@@ -126,21 +126,29 @@ function filterContextForReviser(contextContent, outputFiles) {
   return result.trim() || '(all context files are covered by the current implementation block)'
 }
 
-// Marks a feature BLOCKED and writes its stuck-reason file in parallel.
-// label: optional suffix appended to agent labels (e.g. 'lint' → 'mark-blocked-lint').
+// Marks a feature BLOCKED, writes its stuck-reason file, and optionally appends metrics.
+// metricsRecord: pre-built JSON string to append to metrics.jsonl (omit for early exits).
+// label: optional suffix appended to agent label (e.g. 'lint' → 'finalize-blocked-lint').
 // Returns the standard { blocked: true, feature, reason, ...extra } result object.
-async function blockFeature(featureId, stuckContent, { label = '', phase, reason, ...returnExtra }) {
+async function blockFeature(featureId, stuckContent, { metricsRecord = null, label = '', phase, reason, ...returnExtra }) {
   const labelSuffix = label ? `-${label}` : ''
-  await parallel([
-    () => agent(
-      `Run: node harness/update-status.js --feature ${featureId} --status BLOCKED`,
-      { label: `mark-blocked${labelSuffix}`, phase }
-    ),
-    () => agent(
-      `Write to harness/stuck/${featureId}_stuck_reason.md (create file, overwrite if exists):\n${stuckContent}`,
-      { label: `write-stuck${labelSuffix}`, phase }
-    ),
-  ])
+  const stuckPath = `harness/stuck/${featureId}_stuck_reason.md`
+  const metricsCmd = metricsRecord
+    ? `node harness/finalize-run.js --feature ${featureId} --status BLOCKED --write-metrics <<'METRICS_EOF'
+${metricsRecord}
+METRICS_EOF`
+    : `node harness/finalize-run.js --feature ${featureId} --status BLOCKED`
+  await agent(
+    `Run these commands in sequence in the project root:
+
+${metricsCmd}
+
+mkdir -p harness/stuck
+cat > ${stuckPath} <<'STUCK_CONTENT_END'
+${stuckContent}
+STUCK_CONTENT_END`,
+    { label: `finalize-blocked${labelSuffix}`, phase }
+  )
   return { blocked: true, feature: featureId, reason, ...returnExtra }
 }
 
@@ -416,13 +424,8 @@ if (requestedFeature) {
   if (args && args.retry === true && target.status === 'BLOCKED') {
     log(`Retrying BLOCKED feature ${target.id} — resetting to TODO`)
     await agent(
-      `Run: node harness/update-status.js --feature ${target.id} --status TODO`,
+      `Run: node harness/finalize-run.js --feature ${target.id} --status TODO --cleanup-stuck`,
       { label: `retry-reset:${target.id}`, phase: 'Setup' }
-    )
-    await agent(
-      `Run this command in the project root:
-node -e "const fs=require('fs'),p='harness/stuck/${target.id}_stuck_reason.md';if(fs.existsSync(p)){fs.unlinkSync(p);console.log('Deleted '+p);}else{console.log('No stuck file');}"`,
-      { label: `cleanup-stuck:${target.id}`, phase: 'Setup' }
     )
   }
 } else {
@@ -918,25 +921,15 @@ const metricsRecord = JSON.stringify({
   preflight_verdict: preflight ? preflight.verdict : (runTests ? 'skipped' : 'n/a'),
   preflight_issues:  preflight ? preflight.issues : [],
 })
-await agent(
-  `Append this line to the file harness/metrics.jsonl (create it if it does not exist):
-${metricsRecord}
-
-The file holds one JSON object per line. Do not modify existing lines — only append the new line followed by a newline character.`,
-  { label: 'write-metrics', phase: 'Update' }
-)
-
 if (verdict && verdict.result === 'PASS') {
   await agent(
-    `Run: node harness/update-status.js --feature ${targetId} --status DONE`,
-    { label: 'mark-done', phase: 'Update' }
+    `Run in the project root:
+node harness/finalize-run.js --feature ${targetId} --status DONE --cleanup-stuck --write-metrics <<'METRICS_EOF'
+${metricsRecord}
+METRICS_EOF`,
+    { label: 'finalize-run', phase: 'Update' }
   )
   log(`✓ ${targetId} complete and marked DONE`)
-  await agent(
-    `Run this command in the project root:
-node -e "const fs=require('fs'),p='harness/stuck/${targetId}_stuck_reason.md';if(fs.existsSync(p)){fs.unlinkSync(p);console.log('Deleted '+p);}else{console.log('No stuck file');}"`,
-    { label: `cleanup-stuck:${targetId}`, phase: 'Update' }
-  )
 
   // Run post-build command if this feature has one (e.g., npm install, npm run fetch)
   if (postBuildCommand) {
@@ -1007,7 +1000,7 @@ If it fails, report the error — but this does NOT revert the DONE status; it i
   log(`  Reason: ${failReason}`)
   log(`Tokens used this run: ${budget.spent().toLocaleString()}`)
   const blockedResult = await blockFeature(targetId, stuckFileContent, {
-    phase: 'Update', reason: failReason, revisions: revision,
+    metricsRecord, phase: 'Update', reason: failReason, revisions: revision,
   })
   // Cross-run spec analysis: if this feature has blocked before (≥2 records in metrics.jsonl
   // including the current run), identify repeating failure strings and append targeted hints.
