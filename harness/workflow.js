@@ -154,15 +154,6 @@ const VERDICT_SCHEMA = {
   },
 }
 
-const FILE_CHECK_SCHEMA = {
-  type: 'object',
-  required: ['allPresent', 'missing'],
-  properties: {
-    allPresent: { type: 'boolean' },
-    missing:    { type: 'array', items: { type: 'string' } },
-  },
-}
-
 const PRE_EVAL_VALIDATION_SCHEMA = {
   type: 'object',
   required: ['passed', 'output'],
@@ -647,25 +638,36 @@ Do not produce any prose output — only write the files listed above.`,
   { label: `creator:${targetId}`, phase: 'Create' }
 )
 
-const fileCheck = await agent(
-  `Check whether each of these files exists on disk. Run \`ls <file>\` for each one.
+// Read output files and derive presence in one shot — avoids a separate ls-based file-check agent.
+// MISSING markers in the returned string tell us which files the Creator failed to write.
+const READ_FILES_PROMPT = `Read the following files and return their contents concatenated.
+Format each file as:
+=== FILE: <path> ===
+<full file contents>
 
-Files to check:
-${outputFiles.join('\n')}
+If a file does not exist, write:
+=== FILE: <path> === MISSING
 
-Return allPresent: true only if every file exists. List the path of any missing file in the missing array.`,
-  { schema: FILE_CHECK_SCHEMA, label: `file-check:${targetId}`, phase: 'Create' }
+Files to read:
+${outputFiles.join('\n')}`
+
+let writtenFiles = await agent(
+  READ_FILES_PROMPT,
+  { label: `read-output:${targetId}:initial`, phase: 'Create' }
 )
 
-if (!fileCheck.allPresent) {
-  log(`⚠ Creator did not write expected files: ${fileCheck.missing.join(', ')}`)
+const missing = outputFiles.filter(f => writtenFiles.includes(`=== FILE: ${f} === MISSING`))
+const allPresent = missing.length === 0
+
+if (!allPresent) {
+  log(`⚠ Creator did not write expected files: ${missing.join(', ')}`)
 }
 
 // ─── Phase 2.5: Pre-Eval Validation (discovery features with pre_eval_command) ─
 
 let preEvalResult = null
 
-if (preEvalCommand && fileCheck.allPresent) {
+if (preEvalCommand && allPresent) {
   log(`Running pre-eval validation...`)
   preEvalResult = await agent(
     `Run this command in the project root (the directory containing package.json, not harness/):
@@ -677,8 +679,39 @@ Capture the full stdout and stderr combined. Return:
     { schema: PRE_EVAL_VALIDATION_SCHEMA, label: `pre-eval-validate:${targetId}`, phase: 'Create' }
   )
   log(`Pre-eval validation: ${preEvalResult.passed ? 'PASS ✓' : 'FAIL ✗'} — ${preEvalResult.output.split('\n')[0]}`)
-} else if (preEvalCommand && !fileCheck.allPresent) {
-  preEvalResult = { passed: false, output: `Skipped — required output files missing: ${fileCheck.missing.join(', ')}` }
+} else if (preEvalCommand && !allPresent) {
+  preEvalResult = { passed: false, output: `Skipped — required output files missing: ${missing.join(', ')}` }
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function buildVerifyPrompt(featureTestFiles) {
+  const hasFeatureTests = featureTestFiles.length > 0
+  return `Run the parking app test suite in the project root (directory containing package.json, not harness/).
+
+Run these steps in order:
+1. test -d node_modules || npm install
+${hasFeatureTests
+  ? `2. npx vitest run ${featureTestFiles.join(' ')}
+   (Feature tests only — isolates whether this feature's own implementation is correct)
+3. npm test
+   (Full suite — catches regressions in other features)
+4. npm run typecheck`
+  : `2. npm test
+3. npm run typecheck`}
+
+Return:
+- featureTestsPassed: ${hasFeatureTests ? 'true if step 2 exits code 0' : 'omit this field (no feature test files for this feature)'}
+- featureTestOutput: ${hasFeatureTests ? 'full stdout+stderr of step 2' : 'omit'}
+- featurePassedCount / featureFailedCount: ${hasFeatureTests ? 'parsed from step 2' : 'omit'}
+- featureTestFailures: ${hasFeatureTests ? '[{test, error}] for each failure in step 2' : 'omit'}
+- testsPassed: true if npm test exits code 0
+- testOutput: full stdout+stderr of npm test
+- passedCount / failedCount: parsed from npm test output
+- testFailures: [{test, error}] for each failure in npm test
+- typecheckPassed: true if typecheck exits code 0
+- typecheckOutput: full stdout+stderr of typecheck
+- typecheckErrors: one string per TypeScript error (file + line + message)`
 }
 
 // ─── Phase 3: Verify ────────────────────────────────────────────────────────
@@ -690,14 +723,14 @@ let testResult
 if (!runTests) {
   log(`Discovery feature — skipping npm test and typecheck`)
   testResult = { featureTestsPassed: null, testsPassed: true, typecheckPassed: true, testOutput: 'skipped (discovery feature)', typecheckOutput: 'skipped (discovery feature)' }
-} else if (!fileCheck.allPresent) {
-  log(`Skipping tests — creator did not write: ${fileCheck.missing.join(', ')}`)
+} else if (!allPresent) {
+  log(`Skipping tests — creator did not write: ${missing.join(', ')}`)
   testResult = {
     featureTestsPassed: null,
     testsPassed: false,
     typecheckPassed: false,
-    testOutput: `Skipped — creator did not write expected output files: ${fileCheck.missing.join(', ')}`,
-    typecheckOutput: `Skipped — creator did not write expected output files: ${fileCheck.missing.join(', ')}`,
+    testOutput: `Skipped — creator did not write expected output files: ${missing.join(', ')}`,
+    typecheckOutput: `Skipped — creator did not write expected output files: ${missing.join(', ')}`,
   }
 } else {
   testResult = await agent(
@@ -746,23 +779,6 @@ phase('Evaluate')
 let verdict = null
 let revision = 0
 const MAX_REVISIONS = 2
-
-const READ_FILES_PROMPT = `Read the following files and return their contents concatenated.
-Format each file as:
-=== FILE: <path> ===
-<full file contents>
-
-If a file does not exist, write:
-=== FILE: <path> === MISSING
-
-Files to read:
-${outputFiles.join('\n')}`
-
-// Read what the Creator wrote — before the loop so revisions only re-read after actually changing files
-let writtenFiles = await agent(
-  READ_FILES_PROMPT,
-  { label: `read-output:${targetId}:initial`, phase: 'Evaluate' }
-)
 
 while (revision <= MAX_REVISIONS) {
 
