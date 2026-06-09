@@ -151,7 +151,7 @@
   {
     "id": "F-06",
     "name": "App State Machine",
-    "status": "TODO",
+    "status": "DONE",
     "order": 9,
     "depends_on": [
       "F-02",
@@ -216,7 +216,7 @@
   {
     "id": "F-16",
     "name": "Next Violation Window",
-    "status": "TODO",
+    "status": "DONE",
     "order": 14,
     "depends_on": [
       "F-03"
