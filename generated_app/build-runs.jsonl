@@ -1,1 +1,3 @@
 {"taskId":"w142gaxe7","date":"2026-06-09T00:00:00.000Z","durationMs":3035826,"agentCount":85,"subagentTokens":1451369,"budgetSpent":165680,"completed":7,"blocked":["F-03","F-01","F-01.9"],"partial":false}
+{"date":"2026-06-09T21:33:41.545Z","completed":2,"blocked":["F-03"],"budgetSpent":0,"taskId":"wku3dk01x","subagentTokens":997916,"agentCount":43,"durationMs":3139402,"partial":false}
+{"date":"2026-06-09T22:45:58.112Z","budgetSpent":223374,"completed":4,"blocked":["F-06","F-09","F-16"],"partial":false,"taskId":"wztnx07ca","subagentTokens":1564651,"agentCount":67,"durationMs":3306625}

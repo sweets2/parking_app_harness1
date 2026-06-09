@@ -104,7 +104,7 @@
   {
     "id": "F-03",
     "name": "Shared Pure Logic",
-    "status": "TODO",
+    "status": "DONE",
     "order": 6,
     "depends_on": [
       "F-02"
@@ -170,7 +170,7 @@
   {
     "id": "F-07",
     "name": "Map Module",
-    "status": "TODO",
+    "status": "DONE",
     "order": 10,
     "depends_on": [
       "F-02",
@@ -387,7 +387,7 @@
   {
     "id": "F-07.6",
     "name": "Street Click Popup",
-    "status": "TODO",
+    "status": "DONE",
     "order": 24,
     "depends_on": [
       "F-02.5",
@@ -404,7 +404,7 @@
   {
     "id": "F-17.5",
     "name": "Street Popup Click Wiring",
-    "status": "TODO",
+    "status": "DONE",
     "order": 25,
     "depends_on": [
       "F-07.6",
