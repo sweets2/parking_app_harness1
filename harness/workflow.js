@@ -754,6 +754,7 @@ phase('Evaluate')
 
 let verdict = null
 let revision = 0
+let noChangeDetected = false
 const MAX_REVISIONS = 2
 
 while (revision <= MAX_REVISIONS) {
@@ -855,6 +856,22 @@ ${featureSpec}`,
     { label: `revise:${targetId}:r${revision}`, phase: 'Evaluate' }
   )
 
+  // No-change short-circuit: re-read output files immediately after the Reviser.
+  // If the Reviser wrote nothing different, skip the verifier + next evaluator and block
+  // immediately — saves up to 2 agent calls per stalled revision cycle.
+  // This read also replaces the end-of-loop read, so there is no extra cost when the
+  // Reviser does make changes.
+  const prevWrittenFiles = writtenFiles
+  writtenFiles = await agent(
+    READ_FILES_PROMPT,
+    { label: `read-output:${targetId}:r${revision}`, phase: 'Evaluate' }
+  )
+  if (writtenFiles === prevWrittenFiles) {
+    log(`⚠ Reviser r${revision} made no file changes — short-circuiting to BLOCKED`)
+    noChangeDetected = true
+    break
+  }
+
   // Re-run tests after revision (or re-run pre-eval validation for discovery features)
   if (!runTests && preEvalCommand) {
     preEvalResult = await agent(
@@ -881,12 +898,6 @@ Capture the full stdout and stderr combined. Return:
   } else if (runTests) {
     metricTestRuns.push({ revision, featureTestsPassed: testResult.featureTestsPassed ?? null, featurePassedCount: testResult.featurePassedCount ?? null, featureFailedCount: testResult.featureFailedCount ?? null, passed: testResult.passedCount ?? null, failed: testResult.failedCount ?? null, typecheckPassed: testResult.typecheckPassed })
   }
-
-  // Re-read what the Reviser wrote — feeds the next iteration's evaluator
-  writtenFiles = await agent(
-    READ_FILES_PROMPT,
-    { label: `read-output:${targetId}:r${revision}`, phase: 'Evaluate' }
-  )
 }
 
 log(`Tokens spent: ${budget.spent().toLocaleString()}`)
@@ -945,33 +956,53 @@ If it fails, report the error — but this does NOT revert the DONE status; it i
   return { success: true, feature: targetId, revisions: revision }
 
 } else {
-  const failReason = verdict ? verdict.brief : 'No verdict produced'
   const failures = verdict && verdict.failures && verdict.failures.length > 0
     ? verdict.failures.map(f => `- ${f}`).join('\n')
     : '(none listed)'
 
-  const stuckFileContent = [
-    `# ${targetId} — Stuck after ${revision} revision(s)`,
-    ``,
-    `## Evaluator verdict`,
-    `**Result:** ${verdict ? verdict.result : 'none'}`,
-    `**Summary:** ${failReason}`,
-    ``,
-    `## Specific failures`,
-    failures,
-    ``,
-    `## Last test results`,
-    `${testResult.passedCount ?? '?'} passed, ${testResult.failedCount ?? '?'} failed`,
-    ``,
-    testResult.testFailures && testResult.testFailures.length > 0
-      ? testResult.testFailures.map(f => `- **${f.test}**\n  ${f.error}`).join('\n')
-      : '(no structured failure data)',
-    ``,
-    `## Last typecheck errors`,
-    testResult.typecheckErrors && testResult.typecheckErrors.length > 0
-      ? testResult.typecheckErrors.map(e => `- ${e}`).join('\n')
-      : '(none)',
-  ].join('\n')
+  const failReason = noChangeDetected
+    ? `Reviser stalled — no file changes detected after revision ${revision}`
+    : (verdict ? verdict.brief : 'No verdict produced')
+
+  const stuckFileContent = noChangeDetected
+    ? [
+        `# ${targetId} — Blocked: Reviser stalled (no file changes)`,
+        ``,
+        `## What happened`,
+        `The Reviser ran on revision ${revision} but made no changes to any output file.`,
+        `This typically means the model hallucinated that the code was already correct without patching it.`,
+        `Skipped re-verify and re-evaluate to avoid wasting agent calls on unchanged output.`,
+        ``,
+        `## Last evaluator verdict (before stall)`,
+        `**Result:** ${verdict ? verdict.result : 'none'}`,
+        `**Summary:** ${verdict ? verdict.brief : '(none)'}`,
+        ``,
+        `## Specific failures`,
+        failures,
+      ].join('\n')
+    : [
+        `# ${targetId} — Stuck after ${revision} revision(s)`,
+        ``,
+        `## Evaluator verdict`,
+        `**Result:** ${verdict ? verdict.result : 'none'}`,
+        `**Summary:** ${failReason}`,
+        ``,
+        `## Specific failures`,
+        failures,
+        ``,
+        `## Last test results`,
+        `${testResult.passedCount ?? '?'} passed, ${testResult.failedCount ?? '?'} failed`,
+        ``,
+        testResult.testFailures && testResult.testFailures.length > 0
+          ? testResult.testFailures.map(f => `- **${f.test}**\n  ${f.error}`).join('\n')
+          : '(no structured failure data)',
+        ``,
+        `## Last typecheck errors`,
+        testResult.typecheckErrors && testResult.typecheckErrors.length > 0
+          ? testResult.typecheckErrors.map(e => `- ${e}`).join('\n')
+          : '(none)',
+      ].join('\n')
+
   log(`✗ ${targetId} BLOCKED after ${revision} revision(s) — see harness/stuck/${targetId}_stuck_reason.md`)
   log(`  Reason: ${failReason}`)
   log(`Tokens used this run: ${budget.spent().toLocaleString()}`)
