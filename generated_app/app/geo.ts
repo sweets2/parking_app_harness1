@@ -43,6 +43,20 @@ export async function getStreetName(lat: number, lng: number): Promise<string | 
 }
 
 /**
+ * Pre-seed the cross-street cache from a build-time lookup table.
+ * Only inserts keys not already present — a live geocode result takes priority.
+ */
+export function seedGeocodeCache(
+  table: Record<string, { lat: number; lng: number } | null>
+): void {
+  for (const [key, value] of Object.entries(table)) {
+    if (!_crossStreetCache.has(key)) {
+      _crossStreetCache.set(key, value);
+    }
+  }
+}
+
+/**
  * Geocode a cross-street name (e.g. "9th St") in Hoboken, NJ.
  * Results are cached in memory — null is cached too (failure is not retried).
  * Rate-limited to 1 req/sec shared with getStreetName.

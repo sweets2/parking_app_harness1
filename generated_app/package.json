@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "fetch":          "tsx fetcher/fetch.ts",
-    "fetch-cleaning": "tsx fetcher/fetch-street-cleaning.ts",
-    "test":           "vitest run",
-    "typecheck":      "tsc --noEmit",
-    "build":          "esbuild app/main.ts --bundle --outfile=app/app.js && esbuild app/sw.ts --bundle --outfile=app/sw.js --platform=browser && mkdir -p app/data && cp data/latest.json app/data/latest.json && cp data/street-cleaning.json app/data/street-cleaning.json",
-    "dev":            "esbuild app/main.ts --bundle --outfile=app/app.js --watch"
+    "fetch":                   "tsx fetcher/fetch.ts",
+    "fetch-cleaning":          "tsx fetcher/fetch-street-cleaning.ts",
+    "geocode-cross-streets":   "tsx fetcher/geocode-cross-streets.ts",
+    "test":                    "vitest run",
+    "typecheck":               "tsc --noEmit",
+    "build":                   "esbuild app/main.ts --bundle --outfile=app/app.js && esbuild app/sw.ts --bundle --outfile=app/sw.js --platform=browser && mkdir -p app/data && cp data/latest.json app/data/latest.json && cp data/street-cleaning.json app/data/street-cleaning.json && (cp data/cross-streets.json app/data/cross-streets.json 2>/dev/null || true)",
+    "dev":                     "esbuild app/main.ts --bundle --outfile=app/app.js --watch"
   },
   "dependencies": {
     "leaflet": "^1.9.0"

@@ -23,7 +23,7 @@ import {
   showStreetPopup,
   setTowSignsVisible,
 } from "./map";
-import { getStreetName, geocodeCrossStreet } from "./geo";
+import { getStreetName, geocodeCrossStreet, seedGeocodeCache } from "./geo";
 import { createApp } from "./app";
 import type { App, AppState } from "./app";
 import {
@@ -252,6 +252,15 @@ export async function initBrowserApp(): Promise<void> {
       cleaningEntries = (data as { entries: StreetCleaningEntry[] }).entries;
     })
     .catch(() => { /* non-fatal — cleaningEntries stays empty */ });
+
+  // Fire-and-forget: seed the geocode cache from the build-time lookup table.
+  // If the file is absent or stale, geocodeCrossStreet falls back to Nominatim.
+  fetch("data/cross-streets.json")
+    .then((res) => res.json())
+    .then((data: unknown) => {
+      seedGeocodeCache(data as Record<string, { lat: number; lng: number } | null>);
+    })
+    .catch(() => { /* non-fatal — runtime Nominatim calls serve as fallback */ });
 
   // Fetch sign data
   let signsData: { signs: Sign[]; fetchTime: Date };
