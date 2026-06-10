@@ -198,6 +198,7 @@ function renderState(state: AppState): void {
 
 export async function initBrowserApp(): Promise<void> {
   renderLoading();
+  initMap();
 
   // Fetch sign data
   let signsData: { signs: Sign[]; fetchTime: Date };
