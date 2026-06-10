@@ -234,7 +234,7 @@
   {
     "id": "F-13",
     "name": "Data Freshness Check",
-    "status": "TODO",
+    "status": "DONE",
     "order": 15,
     "depends_on": [
       "F-03",
@@ -261,11 +261,13 @@
       "F-13"
     ],
     "context_files": [
-      "app/app.ts",
-      "shared/parking-logic.ts"
+      "app/main.ts",
+      "shared/parking-logic.ts",
+      "tests/fixtures/signs.ts"
     ],
     "output_files": [
-      "app/app.ts"
+      "app/main.ts",
+      "tests/unit/main.test.ts"
     ]
   },
   {
@@ -315,7 +317,7 @@
   {
     "id": "F-11",
     "name": "Flow 2 — Returning",
-    "status": "TODO",
+    "status": "DONE",
     "order": 19,
     "depends_on": [
       "F-06",
@@ -338,7 +340,7 @@
   {
     "id": "F-12",
     "name": "PWA Shell",
-    "status": "TODO",
+    "status": "DONE",
     "order": 21,
     "depends_on": [
       "F-06"
