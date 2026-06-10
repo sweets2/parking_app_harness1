@@ -340,6 +340,10 @@ export async function initBrowserApp(): Promise<void> {
     if (currentState.mode === "browsing") {
       renderPositionMarker(lat, lng);
       app.setUserPosition(lat, lng);
+      const road = await getStreetName(lat, lng);
+      if (road !== null) {
+        showStreetPopup(lat, lng, road, findCleaningEntries(road));
+      }
     } else if (currentState.mode === "parked") {
       const road = await getStreetName(lat, lng);
       if (road !== null) {
