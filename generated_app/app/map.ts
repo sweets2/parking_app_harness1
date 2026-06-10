@@ -40,8 +40,13 @@ interface LeafletMap {
   setView(center: [number, number], zoom: number): LeafletMap;
   panTo(center: [number, number]): LeafletMap;
   getCenter(): LeafletLatLng;
-  on(event: string, handler: (e: { latlng: LeafletLatLng }) => void): LeafletMap;
+  getZoom(): number;
+  on(event: string, handler: (e: unknown) => void): LeafletMap;
   off(event: string): LeafletMap;
+}
+
+interface LeafletCircleMarker extends LeafletLayer {
+  setRadius(radius: number): void;
 }
 
 interface LeafletIcon {
@@ -57,7 +62,7 @@ interface LeafletStatic {
   circleMarker(
     latlng: [number, number],
     options: Record<string, unknown>
-  ): LeafletLayer;
+  ): LeafletCircleMarker;
   marker(
     latlng: [number, number],
     options: { icon: LeafletIcon }
@@ -79,9 +84,16 @@ function getL(): LeafletStatic {
 
 let _map: LeafletMap | null = null;
 let _signLayers: LeafletLayer[] = [];
-let _positionMarker: LeafletLayer | null = null;
-let _spotMarker: LeafletLayer | null = null;
+let _positionMarker: LeafletCircleMarker | null = null;
+let _spotMarker: LeafletCircleMarker | null = null;
 let _streetPopup: LeafletPopup | null = null;
+
+const DEFAULT_ZOOM = 15;
+
+function dotScale(): number {
+  if (_map === null) return 1;
+  return Math.max(0.6, Math.min(3, Math.pow(1.25, _map.getZoom() - DEFAULT_ZOOM)));
+}
 
 // ─── Tow sign dot icons ───────────────────────────────────────────────────────
 
@@ -98,6 +110,8 @@ const REASON_EMOJI: Record<string, string> = {
 };
 
 const SPOT_COLOR = "#1d6fe3"; // blue — visually distinct from sign markers
+const POSITION_BASE_RADIUS = 7;
+const SPOT_BASE_RADIUS = 10;
 
 // ─── F-10.3 signEmoji ─────────────────────────────────────────────────────────
 
@@ -131,6 +145,24 @@ export function initMap(): LeafletMap {
   _positionMarker = null;
   _spotMarker = null;
   _streetPopup = null;
+
+  // Scale tow icons proportionally with zoom — each level doubles map detail
+  const updateIconScale = () => {
+    const zoom = map.getZoom();
+    const towScale = Math.max(1, Math.min(4, Math.pow(1.4, zoom - DEFAULT_ZOOM)));
+    const mapEl = document.getElementById("map");
+    if (mapEl !== null) {
+      mapEl.style.setProperty("--tow-icon-scale", String(towScale));
+    }
+    const ds = dotScale();
+    if (_positionMarker !== null) {
+      _positionMarker.setRadius(Math.round(POSITION_BASE_RADIUS * ds));
+    }
+    if (_spotMarker !== null) {
+      _spotMarker.setRadius(Math.round(SPOT_BASE_RADIUS * ds));
+    }
+  };
+  map.on("zoomend", updateIconScale);
 
   return map;
 }
@@ -203,7 +235,7 @@ export function renderPositionMarker(lat: number, lng: number): void {
 
   const L = getL();
   const marker = L.circleMarker([lat, lng], {
-    radius: 7,
+    radius: Math.round(POSITION_BASE_RADIUS * dotScale()),
     fillColor: "#2b6cb0",
     color: "#ffffff",
     weight: 2,
@@ -238,7 +270,7 @@ export function renderSpotMarker(spot: SavedSpot): void {
 
   const L = getL();
   const marker = L.circleMarker([spot.lat, spot.lng], {
-    radius: 10,
+    radius: Math.round(SPOT_BASE_RADIUS * dotScale()),
     fillColor: SPOT_COLOR,
     color: "#ffffff",
     weight: 2,
@@ -278,7 +310,8 @@ export function registerMapClickHandler(
   if (_map === null) return;
   _map.off("click");
   _map.on("click", (e) => {
-    callback(e.latlng.lat, e.latlng.lng);
+    const ev = e as { latlng: LeafletLatLng };
+    callback(ev.latlng.lat, ev.latlng.lng);
   });
 }
 
