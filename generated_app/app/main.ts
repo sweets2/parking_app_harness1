@@ -200,6 +200,14 @@ export async function initBrowserApp(): Promise<void> {
   renderLoading();
   initMap();
 
+  // Fire-and-forget: fetch street cleaning schedule.
+  fetch("data/street-cleaning.json")
+    .then((res) => res.json())
+    .then((data: unknown) => {
+      cleaningEntries = (data as { entries: StreetCleaningEntry[] }).entries;
+    })
+    .catch(() => { /* non-fatal — cleaningEntries stays empty */ });
+
   // Fetch sign data
   let signsData: { signs: Sign[]; fetchTime: Date };
   try {
