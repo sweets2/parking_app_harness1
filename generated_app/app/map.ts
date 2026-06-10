@@ -318,7 +318,7 @@ function buildStreetPopupContent(
   entries: StreetCleaningEntry[]
 ): string {
   if (entries.length === 0) {
-    return `<div class="sp-wrap"><div class="sp-header">🧹 Street Cleaning · ${streetName}</div><div class="sp-loc-label"><em>No cleaning schedule found</em></div></div>`;
+    return `<div class="sp-wrap"><div class="sp-header">🧹 Street Cleaning</div><div class="sp-street">${streetName}</div><div class="sp-loc-label"><em>No cleaning schedule found</em></div></div>`;
   }
 
   // Collect unique locations in insertion order
@@ -334,7 +334,8 @@ function buildStreetPopupContent(
 
   const parts: string[] = [];
   parts.push(`<div class="sp-wrap">`);
-  parts.push(`<div class="sp-header">🧹 Street Cleaning · ${streetName}</div>`);
+  parts.push(`<div class="sp-header">🧹 Street Cleaning</div>`);
+  parts.push(`<div class="sp-street">${streetName}</div>`);
 
   for (let i = 0; i < locationOrder.length; i++) {
     if (i > 0) parts.push(`<hr class="sp-sep"/>`);
