@@ -178,14 +178,14 @@ html, body {
 .tz-icon { font-size: 20px; line-height: 1; }
 .tz-title { font-size: 16px; font-weight: 800; color: #cc0000; letter-spacing: 0.05em; }
 .tz-sep { border: none; border-top: 1px solid #e5e7eb; margin: 6px 0; }
-.tz-address { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+.tz-address { font-weight: 700; font-size: 14px; margin-bottom: 4px; text-align: center; }
 .tz-reason {
-  display: inline-block;
+  display: table;
+  margin: 0 auto 6px;
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
-  margin-bottom: 6px;
   background: #fee2e2;
   color: #991b1b;
 }
