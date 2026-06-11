@@ -234,6 +234,23 @@ const REASON_LABELS: Record<string, string> = {
   DELIVERY:     "📦 Delivery",
 };
 
+function formatSignDateTime(dateStr: string, timeStr: string): string {
+  const MONTHS = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+  const dp = dateStr.split("/");
+  const month = MONTHS[parseInt(dp[0] ?? "1", 10) - 1] ?? "";
+  const day   = parseInt(dp[1] ?? "1", 10);
+  const tp    = timeStr.split(":");
+  const h     = parseInt(tp[0] ?? "0", 10);
+  const min   = parseInt(tp[1] ?? "0", 10);
+  const ampm  = h >= 12 ? "pm" : "am";
+  const h12   = h % 12 === 0 ? 12 : h % 12;
+  const time  = min === 0 ? `${h12}${ampm}` : `${h12}:${String(min).padStart(2, "0")}${ampm}`;
+  return `${month} ${day}  ${time}`;
+}
+
 function buildSignPopup(sign: Sign, now: Date): string {
   const startMs = new Date(sign.start_iso).getTime();
   const endMs   = new Date(sign.end_iso).getTime();
@@ -247,29 +264,25 @@ function buildSignPopup(sign: Sign, now: Date): string {
   const reasonLabel = REASON_LABELS[sign.reason] ?? sign.reason;
   const reasonClass = `tz-reason--${sign.reason.toLowerCase()}`;
 
-  const startFmt = `${sign.start_date} · ${formatTime(sign.start_time)}`;
-  const endFmt   = `${sign.stop_date} · ${formatTime(sign.end_time)}`;
+  const startFmt = formatSignDateTime(sign.start_date, sign.start_time);
+  const endFmt   = formatSignDateTime(sign.stop_date, sign.end_time);
 
   let statusHtml = "";
   if (active) {
-    statusHtml = `<div class="tz-status tz-status--active">Active now — ends ${endFmt}</div>`;
+    statusHtml = `<div class="tz-status tz-status--active">Active now — ${endFmt}</div>`;
   } else if (upcoming) {
     const mins = Math.floor((startMs - nowMs) / 60_000);
-    statusHtml = `<div class="tz-status tz-status--upcoming">Starts in ${mins}m</div>`;
+    statusHtml = `<div class="tz-status tz-status--upcoming">Starts in ${mins}m — ${startFmt}</div>`;
   }
 
   return [
     `<div class="tz-wrap">`,
-    `<div class="tz-header"><span class="tz-icon">🚨</span><span class="tz-title">TOW&nbsp;ZONE</span></div>`,
-    `<div class="tz-sub">Towing costs hundreds — far more than a ticket</div>`,
+    `<div class="tz-header"><span class="tz-icon">🚨</span><span class="tz-title">TOW&nbsp;ZONE $$</span></div>`,
     `<hr class="tz-sep"/>`,
     `<div class="tz-address">${sign.address}</div>`,
     `<div class="tz-reason ${reasonClass}">${reasonLabel}</div>`,
     statusHtml,
-    `<div class="tz-times">`,
-    `<div><span class="tz-time-label">From&nbsp;</span>${startFmt}</div>`,
-    `<div><span class="tz-time-label">Until</span>${endFmt}</div>`,
-    `</div>`,
+    `<div class="tz-window">${startFmt} – ${endFmt}</div>`,
     `<div class="tz-permit">Permit ${sign.permit_number}</div>`,
     `</div>`,
   ].join("");
