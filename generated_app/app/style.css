@@ -260,3 +260,114 @@ html, body {
   padding-left: 6px;
   border-radius: 4px;
 }
+
+/* ─── Feedback button ──────────────────────────────────────────────────────── */
+#feedback-btn {
+  position: fixed;
+  bottom: 72px;
+  right: 10px;
+  z-index: 1000;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1.5px solid #d1d5db;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+#feedback-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* ─── Feedback modal ───────────────────────────────────────────────────────── */
+#feedback-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+#feedback-overlay.open {
+  display: flex;
+}
+#feedback-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  width: min(380px, calc(100vw - 32px));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#feedback-modal h2 {
+  margin: 0;
+  font-size: 17px;
+  color: #1e293b;
+}
+.feedback-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+#feedback-text {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: sans-serif;
+  resize: vertical;
+}
+#feedback-text:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+.feedback-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.feedback-actions button {
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+#feedback-cancel {
+  background: #f3f4f6;
+  border: 1.5px solid #d1d5db;
+  color: #374151;
+}
+#feedback-submit {
+  background: #2563eb;
+  border: none;
+  color: #fff;
+}
+#feedback-submit:hover {
+  background: #1d4ed8;
+}
+#feedback-submit:disabled {
+  background: #93c5fd;
+  cursor: default;
+}
+#feedback-confirm {
+  margin: 0;
+  font-size: 13px;
+  min-height: 18px;
+}
+#feedback-confirm.success {
+  color: #16a34a;
+}
+#feedback-confirm.error {
+  color: #dc2626;
+}

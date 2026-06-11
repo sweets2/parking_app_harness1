@@ -11,6 +11,7 @@
  * Exports: normalizeStreet, findCleaningEntries, init (for testing)
  */
 
+import { initFeedback } from "./feedback";
 import {
   initMap,
   registerMapClickHandler,
@@ -255,6 +256,7 @@ async function silentRefresh(app: App, now: Date): Promise<void> {
 export async function initBrowserApp(): Promise<void> {
   renderLoading();
   initMap();
+  initFeedback();
 
   // Fire-and-forget: fetch street cleaning schedule.
   fetch("data/street-cleaning.json")
