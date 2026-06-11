@@ -4,727 +4,727 @@
     {
       "street": "Adams St.",
       "side": "West",
-      "schedule": "Monday  11 am – 12 pm",
+      "schedule": "Monday   11 am – 12 pm",
       "location": "Newark St. to Sixteenth St."
     },
     {
       "street": "Adams St.",
       "side": "East",
-      "schedule": "Tuesday  11 am – 12 pm",
+      "schedule": "Tuesday   11 am – 12 pm",
       "location": "Newark St. to Sixteenth St."
     },
     {
       "street": "Bloomfield St.",
       "side": "East",
-      "schedule": "Monday  11 am – 12 pm",
+      "schedule": "Monday   11 am – 12 pm",
       "location": "Observer Hwy. to north boundary"
     },
     {
       "street": "Bloomfield St.",
       "side": "West",
-      "schedule": "Tuesday  11 am – 12 pm",
+      "schedule": "Tuesday   11 am – 12 pm",
       "location": "Observer Hwy. to north boundary"
     },
     {
       "street": "Castle Point Terrace",
       "side": "East",
-      "schedule": "Wednesday  1 pm – 2 pm",
+      "schedule": "Wednesday   1 pm – 2 pm",
       "location": "Eighth St. and Tenth St."
     },
     {
       "street": "Castle Point Terrace",
       "side": "West",
-      "schedule": "Friday  1 pm – 2 pm",
+      "schedule": "Friday   1 pm – 2 pm",
       "location": "Eighth St. to Tenth St."
     },
     {
       "street": "Clinton St.",
       "side": "West",
-      "schedule": "Monday  9 am – 10 am",
+      "schedule": "Monday   9 am – 10 am",
       "location": "Newark St. to Seventeenth St."
     },
     {
       "street": "Clinton St.",
       "side": "East",
-      "schedule": "Tuesday  9 am – 10 am",
+      "schedule": "Tuesday   9 am – 10 am",
       "location": "Newark St. to Seventeenth St."
     },
     {
       "street": "Eighth St.",
       "side": "North",
-      "schedule": "Wednesday  3 pm – 4 pm",
+      "schedule": "Wednesday   3 pm – 4 pm",
       "location": "Willow Ave. to Jackson St."
     },
     {
       "street": "Eighth St.",
       "side": "North",
-      "schedule": "Wednesday  1 pm – 2 pm",
+      "schedule": "Wednesday   1 pm – 2 pm",
       "location": "East boundary to Willow Ave."
     },
     {
       "street": "Eighth St.",
       "side": "South",
-      "schedule": "Friday  1 pm – 2 pm",
+      "schedule": "Friday   1 pm – 2 pm",
       "location": "East boundary to Willow Ave."
     },
     {
       "street": "Eighth St.",
       "side": "South",
-      "schedule": "Friday  3 pm – 4 pm",
+      "schedule": "Friday   3 pm – 4 pm",
       "location": "Willow Ave. to Jackson St."
     },
     {
       "street": "Eleventh St.",
       "side": "North",
-      "schedule": "Tuesday  10 am – 11 am",
+      "schedule": "Tuesday   10 am – 11 am",
       "location": "Hudson St. to Willow Ave."
     },
     {
       "street": "Eleventh St.",
       "side": "South",
-      "schedule": "Wednesday  2 pm – 3 pm",
+      "schedule": "Wednesday   2 pm – 3 pm",
       "location": "Willow Ave. to Hudson St."
     },
     {
       "street": "Eleventh St.",
       "side": "South",
-      "schedule": "Thursday  3 pm – 4 pm",
+      "schedule": "Thursday   3 pm – 4 pm",
       "location": "Willow Ave. to Monroe St."
     },
     {
       "street": "Eleventh St.",
       "side": "North",
-      "schedule": "Friday  3 pm – 4 pm",
+      "schedule": "Friday   3 pm – 4 pm",
       "location": "Willow Ave. to Monroe St."
     },
     {
       "street": "Fifteenth St.",
       "side": "South",
-      "schedule": "Wednesday  3 pm – 4 pm",
+      "schedule": "Wednesday   3 pm – 4 pm",
       "location": "Park Ave. to Madison St."
     },
     {
       "street": "Fifteenth St.",
       "side": "North",
-      "schedule": "Friday  3 pm – 4 pm",
+      "schedule": "Friday   3 pm – 4 pm",
       "location": "Park Ave. to Madison St."
     },
     {
       "street": "Fifteenth St.",
       "side": "South",
-      "schedule": "Wednesday  3 pm – 4 pm",
+      "schedule": "Wednesday   3 pm – 4 pm",
       "location": "Sinatra Drive to Park Ave."
     },
     {
       "street": "Fifth St.",
       "side": "North",
-      "schedule": "Monday  3 pm – 4 pm",
+      "schedule": "Monday   3 pm – 4 pm",
       "location": "Jackson St. to Grand St."
     },
     {
       "street": "Fifth St.",
       "side": "South",
-      "schedule": "Tuesday  3 pm – 4 pm",
+      "schedule": "Tuesday   3 pm – 4 pm",
       "location": "Jackson St. to Grand St."
     },
     {
       "street": "Fifth St.",
       "side": "North",
-      "schedule": "Wednesday  11 am – 12 pm",
+      "schedule": "Wednesday   11 am – 12 pm",
       "location": "Clinton St. to Sinatra Drive"
     },
     {
       "street": "Fifth St.",
       "side": "South",
-      "schedule": "Thursday  11 am – 12 pm",
+      "schedule": "Thursday   11 am – 12 pm",
       "location": "Clinton St. to Sinatra Drive"
     },
     {
       "street": "First St.",
       "side": "North",
-      "schedule": "Monday  2 pm – 3 pm",
+      "schedule": "Monday   2 pm – 3 pm",
       "location": "Marshall St. to Willow Ave."
     },
     {
       "street": "First St.",
       "side": "South",
-      "schedule": "Tuesday  2 pm – 3 pm",
+      "schedule": "Tuesday   2 pm – 3 pm",
       "location": "Marshall St. to Willow Ave."
     },
     {
       "street": "First St.",
       "side": "North",
-      "schedule": "Wednesday  10 am – 11 am",
+      "schedule": "Wednesday   10 am – 11 am",
       "location": "River St. to Willow Ave."
     },
     {
       "street": "First St.",
       "side": "South",
-      "schedule": "Thursday  10 am – 11 am",
+      "schedule": "Thursday   10 am – 11 am",
       "location": "Willow Ave. to River St."
     },
     {
       "street": "Fourteenth St.",
       "side": "South",
-      "schedule": "Monday  8 am – 9 am",
+      "schedule": "Monday   8 am – 9 am",
       "location": "Willow Ave. to Hudson St."
     },
     {
       "street": "Fourteenth St.",
       "side": "North",
-      "schedule": "Wednesday  8 am – 9 am",
+      "schedule": "Wednesday   8 am – 9 am",
       "location": "Hudson St. to Willow Ave."
     },
     {
       "street": "Fourth St.",
       "side": "North",
-      "schedule": "Monday  3 pm – 4 pm",
+      "schedule": "Monday   3 pm – 4 pm",
       "location": "Willow Ave. to Harrison St."
     },
     {
       "street": "Fourth St.",
       "side": "South",
-      "schedule": "Tuesday  3 pm – 4 pm",
+      "schedule": "Tuesday   3 pm – 4 pm",
       "location": "Willow Ave. to Harrison St."
     },
     {
       "street": "Fourth St.",
       "side": "North",
-      "schedule": "Wednesday  11 am – 12 pm",
+      "schedule": "Wednesday   11 am – 12 pm",
       "location": "River St. to Willow Ave."
     },
     {
       "street": "Fourth St.",
       "side": "South",
-      "schedule": "Thursday  11 am – 12 pm",
+      "schedule": "Thursday   11 am – 12 pm",
       "location": "River St. to Willow Ave."
     },
     {
       "street": "Garden St.",
       "side": "East",
-      "schedule": "Monday  2 pm – 3 pm",
+      "schedule": "Monday   2 pm – 3 pm",
       "location": "Fourteenth St. to Observer Hwy."
     },
     {
       "street": "Garden St.",
       "side": "West",
-      "schedule": "Tuesday  2 pm – 3 pm",
+      "schedule": "Tuesday   2 pm – 3 pm",
       "location": "Fourteenth St. to Observer Hwy."
     },
     {
       "street": "Grand St.",
       "side": "East",
-      "schedule": "Thursday  1 pm – 2 pm",
+      "schedule": "Thursday   1 pm – 2 pm",
       "location": "Sixteenth St. to Newark St."
     },
     {
       "street": "Grand St.",
       "side": "West",
-      "schedule": "Friday  1 pm – 2 pm",
+      "schedule": "Friday   1 pm – 2 pm",
       "location": "Sixteenth St. to Newark St."
     },
     {
       "street": "Grand St.",
       "side": "East",
-      "schedule": "Thursday  2 pm – 3 pm",
+      "schedule": "Thursday   2 pm – 3 pm",
       "location": "Eleventh St. to Tenth St."
     },
     {
       "street": "Grand St.",
       "side": "West",
-      "schedule": "Wednesday  2 pm – 3 pm",
+      "schedule": "Wednesday   2 pm – 3 pm",
       "location": "Eleventh St. to Tenth St."
     },
     {
       "street": "Grove St.",
       "side": "Both",
-      "schedule": "Monday  1 pm – 2 pm",
+      "schedule": "Monday   1 pm – 2 pm",
       "location": "Newark St. to the south boundary"
     },
     {
       "street": "Harrison St.",
       "side": "East",
-      "schedule": "Monday  3 pm – 4 pm",
+      "schedule": "Monday   3 pm – 4 pm",
       "location": "Fifth St. to the northern boundary"
     },
     {
       "street": "Harrison St.",
       "side": "East",
-      "schedule": "Thursday  2 pm – 3 pm",
+      "schedule": "Thursday   2 pm – 3 pm",
       "location": "Fourth St. to Newark St."
     },
     {
       "street": "Harrison St.",
       "side": "West",
-      "schedule": "Friday  2 pm – 3 pm",
+      "schedule": "Friday   2 pm – 3 pm",
       "location": "Fourth St. to Newark St."
     },
     {
       "street": "Henderson St.",
       "side": "Both",
-      "schedule": "Monday  1 pm – 2 pm",
+      "schedule": "Monday   1 pm – 2 pm",
       "location": "Newark St. to south boundary"
     },
     {
       "street": "Hudson Place",
       "side": "South",
-      "schedule": "Thursday  8 am – 9 am",
+      "schedule": "Thursday   8 am – 9 am",
       "location": "Hudson St. to east boundary"
     },
     {
       "street": "Hudson Place",
       "side": "North",
-      "schedule": "Friday  8 am – 9 am",
+      "schedule": "Friday   8 am – 9 am",
       "location": "Hudson St. to east boundary"
     },
     {
       "street": "Hudson St.",
       "side": "West",
-      "schedule": "Wednesday  10 am – 11 am",
+      "schedule": "Wednesday   10 am – 11 am",
       "location": "Fourteenth St. to Observer Hwy."
     },
     {
       "street": "Hudson St.",
       "side": "East",
-      "schedule": "Friday  10 am – 11 am",
+      "schedule": "Friday   10 am – 11 am",
       "location": "Fourteenth St. to Observer Hwy."
     },
     {
       "street": "Hudson St.",
       "side": "East",
-      "schedule": "Friday  10 am – 11 am",
+      "schedule": "Friday   10 am – 11 am",
       "location": "Fourteenth St. to Fifteenth St."
     },
     {
       "street": "Hudson St.",
       "side": "West",
-      "schedule": "Wednesday  10 am – 11 am",
+      "schedule": "Wednesday   10 am – 11 am",
       "location": "Fourteenth St. to Fifteenth St."
     },
     {
       "street": "Jackson St.",
       "side": "East",
-      "schedule": "Thursday  2 pm – 3 pm",
+      "schedule": "Thursday   2 pm – 3 pm",
       "location": "Newark St. to north boundary"
     },
     {
       "street": "Jackson St.",
       "side": "West",
-      "schedule": "Friday  2 pm – 3 pm",
+      "schedule": "Friday   2 pm – 3 pm",
       "location": "Newark St. to north boundary"
     },
     {
       "street": "Jefferson St.",
       "side": "East",
-      "schedule": "Thursday  10 am – 11 am",
+      "schedule": "Thursday   10 am – 11 am",
       "location": "Sixteenth St. to Observer Hwy."
     },
     {
       "street": "Jefferson St.",
       "side": "West",
-      "schedule": "Friday  10 am – 11 am",
+      "schedule": "Friday   10 am – 11 am",
       "location": "Sixteenth St. to Observer Hwy."
     },
     {
       "street": "Madison St.",
       "side": "East",
-      "schedule": "Thursday  9 am – 10 am",
+      "schedule": "Thursday   9 am – 10 am",
       "location": "Newark St. to Fifteenth St."
     },
     {
       "street": "Madison St.",
       "side": "West",
-      "schedule": "Friday  9 am – 10 am",
+      "schedule": "Friday   9 am – 10 am",
       "location": "Newark St. to Fifteenth St."
     },
     {
       "street": "Marshall St.",
       "side": "West",
-      "schedule": "Thursday  2 pm – 3 pm",
+      "schedule": "Thursday   2 pm – 3 pm",
       "location": "First St. to Second St."
     },
     {
       "street": "Marshall St.",
       "side": "East",
-      "schedule": "Monday  2 pm – 3 pm",
+      "schedule": "Monday   2 pm – 3 pm",
       "location": "First St. to Second St."
     },
     {
       "street": "Monroe St.",
       "side": "West",
-      "schedule": "Monday  1 pm – 2 pm",
+      "schedule": "Monday   1 pm – 2 pm",
       "location": "Eleventh St. to Newark St."
     },
     {
       "street": "Monroe St.",
       "side": "East",
-      "schedule": "Tuesday  1 pm – 2 pm",
+      "schedule": "Tuesday   1 pm – 2 pm",
       "location": "Eleventh St. to Newark St."
     },
     {
       "street": "Newark St.",
       "side": "Both",
-      "schedule": "Monday  1 pm – 2 pm",
+      "schedule": "Monday   1 pm – 2 pm",
       "location": "Henderson St. to west boundary"
     },
     {
       "street": "Newark St.",
       "side": "South",
-      "schedule": "Thursday  8 am – 9 am",
+      "schedule": "Thursday   8 am – 9 am",
       "location": "Washington St. to east boundary"
     },
     {
       "street": "Newark St.",
       "side": "South",
-      "schedule": "Thursday  10 am – 11 am",
+      "schedule": "Thursday   10 am – 11 am",
       "location": "Washington St. to Willow Ave."
     },
     {
       "street": "Newark St.",
       "side": "South",
-      "schedule": "Thursday  11 am – 12 pm",
+      "schedule": "Thursday   11 am – 12 pm",
       "location": "Willow Ave. to Jefferson St."
     },
     {
       "street": "Newark St.",
       "side": "North",
-      "schedule": "Friday  11 am – 12 pm",
+      "schedule": "Friday   11 am – 12 pm",
       "location": "Washington St. to Jefferson St."
     },
     {
       "street": "Newark St.",
       "side": "North",
-      "schedule": "Friday  8 am – 9 am",
+      "schedule": "Friday   8 am – 9 am",
       "location": "Washington St. to north boundary"
     },
     {
       "street": "Ninth St.",
       "side": "South",
-      "schedule": "Wednesday  3 pm – 4 pm",
+      "schedule": "Wednesday   3 pm – 4 pm",
       "location": "Jackson St. to Willow Ave."
     },
     {
       "street": "Ninth St.",
       "side": "North",
-      "schedule": "Wednesday  1 pm – 2 pm",
+      "schedule": "Wednesday   1 pm – 2 pm",
       "location": "Willow Ave. to east boundary"
     },
     {
       "street": "Ninth St.",
       "side": "North",
-      "schedule": "Friday  3 pm – 4 pm",
+      "schedule": "Friday   3 pm – 4 pm",
       "location": "Jackson St. to Willow Ave."
     },
     {
       "street": "Ninth St.",
       "side": "South",
-      "schedule": "Friday  1 pm – 2 pm",
+      "schedule": "Friday   1 pm – 2 pm",
       "location": "Willow Ave. to east boundary"
     },
     {
       "street": "Observer Hwy.",
       "side": "Both",
-      "schedule": "Thursday  11 am – 12 pm",
+      "schedule": "Thursday   11 am – 12 pm",
       "location": "Jefferson St. to Monroe St."
     },
     {
       "street": "Observer Hwy.",
       "side": "Both",
-      "schedule": "Friday  11 am – 12 pm",
+      "schedule": "Friday   11 am – 12 pm",
       "location": "Hudson St. to Henderson St."
     },
     {
       "street": "Park Ave.",
       "side": "East",
-      "schedule": "Monday  1 pm – 2 pm",
+      "schedule": "Monday   1 pm – 2 pm",
       "location": "Observer Hwy. to Fourteenth St."
     },
     {
       "street": "Park Ave.",
       "side": "West",
-      "schedule": "Tuesday  1 pm – 2 pm",
+      "schedule": "Tuesday   1 pm – 2 pm",
       "location": "Observer Hwy. to Fourteenth St."
     },
     {
       "street": "Paterson Ave.",
       "side": "Both",
-      "schedule": "Thursday  11 am – 12 pm",
+      "schedule": "Thursday   11 am – 12 pm",
       "location": "Monroe St. to west boundary"
     },
     {
       "street": "River St.",
       "side": "Both",
-      "schedule": "Tuesday  8 am – 9 am",
+      "schedule": "Tuesday   8 am – 9 am",
       "location": "Hudson Place to Fourth St."
     },
     {
       "street": "River Terrace",
       "side": "East",
-      "schedule": "Wednesday  11 am – 12 pm",
+      "schedule": "Wednesday   11 am – 12 pm",
       "location": "Fifth St. to Seventh St."
     },
     {
       "street": "River Terrace",
       "side": "West",
-      "schedule": "Thursday  1 pm – 2 pm",
+      "schedule": "Thursday   1 pm – 2 pm",
       "location": "Fifth St. to Seventh St."
     },
     {
       "street": "Second St.",
       "side": "North",
-      "schedule": "Monday  2 pm – 3 pm",
+      "schedule": "Monday   2 pm – 3 pm",
       "location": "Willow Ave. to Marshall St."
     },
     {
       "street": "Second St.",
       "side": "South",
-      "schedule": "Tuesday  2 pm – 3 pm",
+      "schedule": "Tuesday   2 pm – 3 pm",
       "location": "Willow Ave. to Marshall St."
     },
     {
       "street": "Second St.",
       "side": "North",
-      "schedule": "Wednesday  10 am – 11 am",
+      "schedule": "Wednesday   10 am – 11 am",
       "location": "River St. to Willow Ave."
     },
     {
       "street": "Second St.",
       "side": "South",
-      "schedule": "Thursday  10 am – 11 am",
+      "schedule": "Thursday   10 am – 11 am",
       "location": "River St. to Willow Ave."
     },
     {
       "street": "Seventh St.",
       "side": "North",
-      "schedule": "Wednesday  11 am – 12 pm",
+      "schedule": "Wednesday   11 am – 12 pm",
       "location": "Willow Ave. to Hudson St."
     },
     {
       "street": "Seventh St.",
       "side": "South",
-      "schedule": "Wednesday  3 pm – 4 pm",
+      "schedule": "Wednesday   3 pm – 4 pm",
       "location": "Jackson St. to Willow Ave."
     },
     {
       "street": "Seventh St.",
       "side": "South",
-      "schedule": "Thursday  1 pm – 2 pm",
+      "schedule": "Thursday   1 pm – 2 pm",
       "location": "Willow Ave. to Hudson St."
     },
     {
       "street": "Seventh St.",
       "side": "North",
-      "schedule": "Friday  3 pm – 4 pm",
+      "schedule": "Friday   3 pm – 4 pm",
       "location": "Jackson St. to Willow Ave."
     },
     {
       "street": "Sinatra Drive",
       "side": "West",
-      "schedule": "Wednesday  8 am – 9 am",
+      "schedule": "Wednesday   8 am – 9 am",
       "location": "Sixth St. to Fifth St."
     },
     {
       "street": "Sinatra Drive",
       "side": "East",
-      "schedule": "Monday  10 am – 11 am",
+      "schedule": "Monday   10 am – 11 am",
       "location": "Fifth St. to Eleventh St."
     },
     {
       "street": "Sinatra Drive",
       "side": "West",
-      "schedule": "Monday  10 am – 11 am",
+      "schedule": "Monday   10 am – 11 am",
       "location": "First St. to Fourth St."
     },
     {
       "street": "Sixteenth St.",
       "side": "South",
-      "schedule": "Wednesday  3 pm – 4 pm",
+      "schedule": "Wednesday   3 pm – 4 pm",
       "location": "West boundary to Park Ave."
     },
     {
       "street": "Sixteenth St.",
       "side": "North",
-      "schedule": "Friday  3 pm – 4 pm",
+      "schedule": "Friday   3 pm – 4 pm",
       "location": "West boundary to Park Ave."
     },
     {
       "street": "Sixth St.",
       "side": "North",
-      "schedule": "Monday  3 pm – 4 pm",
+      "schedule": "Monday   3 pm – 4 pm",
       "location": "Willow Ave. to west boundary"
     },
     {
       "street": "Sixth St.",
       "side": "South",
-      "schedule": "Tuesday  3 pm – 4 pm",
+      "schedule": "Tuesday   3 pm – 4 pm",
       "location": "Willow Ave. to west boundary"
     },
     {
       "street": "Sixth St.",
       "side": "North",
-      "schedule": "Wednesday  11 am – 12 pm",
+      "schedule": "Wednesday   11 am – 12 pm",
       "location": "Willow Ave. to east boundary"
     },
     {
       "street": "Sixth St.",
       "side": "South",
-      "schedule": "Thursday  1 pm – 2 pm",
+      "schedule": "Thursday   1 pm – 2 pm",
       "location": "Willow Ave. to east boundary"
     },
     {
       "street": "Tenth St.",
       "side": "South",
-      "schedule": "Wednesday  2 pm – 3 pm",
+      "schedule": "Wednesday   2 pm – 3 pm",
       "location": "Hudson St. to Madison St."
     },
     {
       "street": "Tenth St.",
       "side": "North",
-      "schedule": "Thursday  2 pm – 3 pm",
+      "schedule": "Thursday   2 pm – 3 pm",
       "location": "Hudson St. to Madison St."
     },
     {
       "street": "Tenth St.",
       "side": "South",
-      "schedule": "Wednesday  2 pm – 3 pm",
+      "schedule": "Wednesday   2 pm – 3 pm",
       "location": "Clinton St. to Grand St."
     },
     {
       "street": "Tenth St.",
       "side": "North",
-      "schedule": "Thursday  2 pm – 3 pm",
+      "schedule": "Thursday   2 pm – 3 pm",
       "location": "Clinton St. to Grand St."
     },
     {
       "street": "Third St.",
       "side": "North",
-      "schedule": "Monday  2 pm – 3 pm",
+      "schedule": "Monday   2 pm – 3 pm",
       "location": "Jackson St. to Willow Ave."
     },
     {
       "street": "Third St.",
       "side": "South",
-      "schedule": "Tuesday  2 pm – 3 pm",
+      "schedule": "Tuesday   2 pm – 3 pm",
       "location": "Jackson St. to Willow Ave."
     },
     {
       "street": "Third St.",
       "side": "North",
-      "schedule": "Wednesday  11 am – 12 pm",
+      "schedule": "Wednesday   11 am – 12 pm",
       "location": "Willow Ave. to River St."
     },
     {
       "street": "Third St.",
       "side": "South",
-      "schedule": "Thursday  11 am – 12 pm",
+      "schedule": "Thursday   11 am – 12 pm",
       "location": "Willow Ave. to River St."
     },
     {
       "street": "Thirteenth St.",
       "side": "North",
-      "schedule": "Tuesday  10 am – 11 am",
+      "schedule": "Tuesday   10 am – 11 am",
       "location": "Hudson St. to Willow Ave."
     },
     {
       "street": "Thirteenth St.",
       "side": "South",
-      "schedule": "Wednesday  2 pm – 3 pm",
+      "schedule": "Wednesday   2 pm – 3 pm",
       "location": "Hudson St. to Willow Ave."
     },
     {
       "street": "Thirteenth St.",
       "side": "South",
-      "schedule": "Thursday  3 pm – 4 pm",
+      "schedule": "Thursday   3 pm – 4 pm",
       "location": "Willow Ave. to Madison St."
     },
     {
       "street": "Thirteenth St.",
       "side": "North",
-      "schedule": "Friday  3 pm – 4 pm",
+      "schedule": "Friday   3 pm – 4 pm",
       "location": "Willow Ave. to Madison St."
     },
     {
       "street": "Twelfth St.",
       "side": "North",
-      "schedule": "Tuesday  10 am – 11 am",
+      "schedule": "Tuesday   10 am – 11 am",
       "location": "Willow Ave. to Hudson St."
     },
     {
       "street": "Twelfth St.",
       "side": "South",
-      "schedule": "Wednesday  2 pm – 3 pm",
+      "schedule": "Wednesday   2 pm – 3 pm",
       "location": "Willow Ave. to Hudson St."
     },
     {
       "street": "Twelfth St.",
       "side": "South",
-      "schedule": "Thursday  3 pm – 4 pm",
+      "schedule": "Thursday   3 pm – 4 pm",
       "location": "West boundary to Willow Ave."
     },
     {
       "street": "Twelfth St.",
       "side": "North",
-      "schedule": "Friday  3 pm – 4 pm",
+      "schedule": "Friday   3 pm – 4 pm",
       "location": "West boundary to Willow Ave."
     },
     {
       "street": "Vezzetti Way",
       "side": "South",
-      "schedule": "Monday  8 am – 9 am",
+      "schedule": "Monday   8 am – 9 am",
       "location": "Henderson St. to Washington St."
     },
     {
       "street": "Vezzetti Way",
       "side": "North",
-      "schedule": "Tuesday  8 am – 9 am",
+      "schedule": "Tuesday   8 am – 9 am",
       "location": "Henderson St. to Washington St."
     },
     {
       "street": "Washington St.",
       "side": "East",
-      "schedule": "Monday through Friday  8 am – 9 am",
+      "schedule": "Monday through Friday   8 am – 9 am",
       "location": "Observer Hwy. to Seventh St."
     },
     {
       "street": "Washington St.",
       "side": "West",
-      "schedule": "Monday through Friday  9 am – 10 am",
+      "schedule": "Monday through Friday   9 am – 10 am",
       "location": "Eighth St. to Fifteenth St."
     },
     {
       "street": "Washington St.",
       "side": "East",
-      "schedule": "Monday through Friday  8 am – 9 am",
+      "schedule": "Monday through Friday   8 am – 9 am",
       "location": "Eighth St. to Fifteenth St."
     },
     {
       "street": "Washington St.",
       "side": "West",
-      "schedule": "Monday through Friday  8 am – 9 am",
+      "schedule": "Monday through Friday   8 am – 9 am",
       "location": "Observer Hwy. to Eighth St."
     },
     {
       "street": "Washington St.",
       "side": "East",
-      "schedule": "Monday through Friday  9 am – 10 am",
+      "schedule": "Monday through Friday   9 am – 10 am",
       "location": "Seventh St. to Eighth St."
     },
     {
       "street": "Willow Ave.",
       "side": "West",
-      "schedule": "Monday  10 am – 11 am",
+      "schedule": "Monday   10 am – 11 am",
       "location": "Fourteenth St. to Observer Hwy."
     },
     {
       "street": "Willow Ave.",
       "side": "East",
-      "schedule": "Tuesday  10 am – 11 am",
+      "schedule": "Tuesday   10 am – 11 am",
       "location": "Fourteenth St. to Observer Hwy."
     },
     {
       "street": "Willow Ave.",
       "side": "Both",
-      "schedule": "Wednesday  8 am – 9 am",
+      "schedule": "Wednesday   8 am – 9 am",
       "location": "Fourteenth St. to north boundary"
     }
   ]
