@@ -328,23 +328,18 @@ html, body {
 }
 #violation-toggle:active { background: #f3f4f6; }
 
-.violation-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #ef4444;
-  border: 1.5px solid #fff;
-  box-shadow: 0 0 0 1.5px rgba(239, 68, 68, 0.35);
+.violation-road-icon {
   flex-shrink: 0;
-  transition: background 0.15s, box-shadow 0.15s;
 }
+.violation-road-casing { transition: fill 0.15s; }
+.violation-road-fill { transition: fill 0.15s; }
 .violation-label {
   display: flex;
   flex-direction: column;
   align-items: center;
   line-height: 1.2;
 }
-.violation-title { font-size: 12px; font-weight: 700; color: #1e293b; }
+.violation-title { font-size: 12px; font-weight: 700; color: #1e293b; text-align: center; }
 .violation-status {
   font-size: 10px;
   font-weight: 600;
@@ -356,7 +351,8 @@ html, body {
 
 /* OFF state */
 #violation-legend.violation-off #violation-toggle { border-color: #e5e7eb; }
-#violation-legend.violation-off .violation-dot { background: #9ca3af; box-shadow: none; }
+#violation-legend.violation-off .violation-road-white,
+#violation-legend.violation-off .violation-road-fill { display: none; }
 #violation-legend.violation-off .violation-status { color: #9ca3af; }
 
 /* Hide tow sign markers — only .leaflet-marker-pane; circleMarkers are unaffected */

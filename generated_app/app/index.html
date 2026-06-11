@@ -34,9 +34,13 @@
     </div>
     <div id="violation-legend">
       <button id="violation-toggle" aria-pressed="true" title="Show or hide street violation highlights">
-        <span class="violation-dot"></span>
+        <svg class="violation-road-icon" width="30" height="12" viewBox="0 0 30 12" aria-hidden="true">
+          <rect class="violation-road-casing" width="30" height="12" rx="2" fill="#9ca3af"/>
+          <rect class="violation-road-white" x="1.5" y="2.5" width="27" height="7" rx="1" fill="white"/>
+          <rect class="violation-road-fill" x="1.5" y="2.5" width="27" height="7" rx="1" fill="#ef4444" fill-opacity="0.28"/>
+        </svg>
         <span class="violation-label">
-          <span class="violation-title">Street Highlights</span>
+          <span class="violation-title">Street<br>Highlights</span>
           <span class="violation-status">Enabled</span>
         </span>
       </button>
