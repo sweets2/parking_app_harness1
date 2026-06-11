@@ -130,12 +130,12 @@ html, body {
   animation: schedule-breathe 1s ease-in-out infinite;
 }
 @keyframes schedule-warn {
-  0%, 100% { color: #d97706; }
-  50%       { color: #fde68a; }
+  0%, 100% { color: #f59e0b; }
+  50%       { color: #fbbf24; }
 }
 .sp-sched--upcoming {
   font-weight: bold;
-  animation: schedule-warn 2s ease-in-out infinite;
+  animation: schedule-warn 3s ease-in-out infinite;
 }
 .dir-badge {
   display: inline-flex;
