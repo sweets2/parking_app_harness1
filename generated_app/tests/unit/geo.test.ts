@@ -147,4 +147,36 @@ describe("geocodeCrossStreet", () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(secondResult).toBeNull();
   });
+
+  it("GIVEN mainStreet is provided, WHEN geocodeCrossStreet('hudson street', '7th street') is called, THEN the Nominatim URL contains the intersection query form", async () => {
+    const { geocodeCrossStreet } = await import("../../app/geo");
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{ lat: "40.7462", lon: "-74.0380" }],
+    } as Response);
+    global.fetch = mockFetch;
+
+    await geocodeCrossStreet("hudson street", "7th street");
+
+    expect(mockFetch).toHaveBeenCalledOnce();
+    const url = (mockFetch.mock.calls[0] as [string])[0];
+    // URL must encode "hudson street & 7th street, Hoboken, NJ" — not the standalone avenue
+    expect(url).toContain("hudson%20street%20%26%207th%20street");
+  });
+
+  it("GIVEN mainStreet is provided, WHEN geocodeCrossStreet is called twice with the same pair, THEN fetch is called only once (intersection key cached)", async () => {
+    const { geocodeCrossStreet } = await import("../../app/geo");
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{ lat: "40.7462", lon: "-74.0380" }],
+    } as Response);
+    global.fetch = mockFetch;
+
+    await geocodeCrossStreet("hudson street", "7th street");
+    await vi.advanceTimersByTimeAsync(1001);
+    const second = await geocodeCrossStreet("hudson street", "7th street");
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(second).toEqual({ lat: 40.7462, lng: -74.038 });
+  });
 });

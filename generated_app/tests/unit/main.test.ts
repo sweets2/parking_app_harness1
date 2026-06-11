@@ -115,7 +115,7 @@ vi.mock("../../app/app", () => ({
 // ─── Mock app/geo ─────────────────────────────────────────────────────────────
 
 const mockGetStreetName = vi.fn<[number, number], Promise<string | null>>();
-const mockGeocodeCrossStreet = vi.fn<[string], Promise<{ lat: number; lng: number } | null>>();
+const mockGeocodeCrossStreet = vi.fn<[string, string?], Promise<{ lat: number; lng: number } | null>>();
 
 vi.mock("../../app/geo", () => ({
   getStreetName: mockGetStreetName,

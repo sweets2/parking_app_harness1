@@ -768,5 +768,32 @@
       "app/map.ts",
       "app/style.css"
     ]
+  },
+  {
+    "id": "F-33",
+    "name": "Intersection-Based Segment Geocoding",
+    "status": "DONE",
+    "order": 41,
+    "depends_on": [
+      "F-21",
+      "F-20.5"
+    ],
+    "context_files": [
+      "app/geo.ts",
+      "app/main.ts",
+      "fetcher/geocode-cross-streets.ts",
+      "tests/unit/geo.test.ts",
+      "tests/unit/main.test.ts"
+    ],
+    "output_files": [
+      "app/geo.ts",
+      "app/main.ts",
+      "fetcher/geocode-cross-streets.ts",
+      "data/cross-streets.json",
+      "tests/unit/geo.test.ts",
+      "tests/unit/main.test.ts",
+      "tests/unit/map.test.ts"
+    ],
+    "post_build_command": "npm run geocode-cross-streets"
   }
 ]

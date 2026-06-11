@@ -132,7 +132,8 @@ export function findCleaningEntries(roadName: string): StreetCleaningEntry[] {
  */
 function buildDetectSegmentCallback(
   clickLat: number,
-  clickLng: number
+  clickLng: number,
+  roadName: string
 ): (locations: string[]) => Promise<string[] | null> {
   return async (locations: string[]) => {
     const matched: string[] = [];
@@ -140,9 +141,9 @@ function buildDetectSegmentCallback(
       const crossStreets = extractCrossStreets(location);
       if (crossStreets === null) continue;
       const [from, to] = crossStreets;
-      const fromCoord = await geocodeCrossStreet(normalizeStreet(from));
+      const fromCoord = await geocodeCrossStreet(normalizeStreet(from), normalizeStreet(roadName));
       if (fromCoord === null) continue;
-      const toCoord = await geocodeCrossStreet(normalizeStreet(to));
+      const toCoord = await geocodeCrossStreet(normalizeStreet(to), normalizeStreet(roadName));
       if (toCoord === null) continue;
       if (detectMatchingSegment(clickLat, clickLng, fromCoord, toCoord)) {
         matched.push(location);
@@ -199,7 +200,7 @@ function renderState(state: AppState): void {
       // Auto-open street popup for the saved spot's location (initial save and reload).
       void getStreetName(state.spot.lat, state.spot.lng).then((road) => {
         if (road !== null) {
-          const detectSegment = buildDetectSegmentCallback(state.spot.lat, state.spot.lng);
+          const detectSegment = buildDetectSegmentCallback(state.spot.lat, state.spot.lng, road);
           showStreetPopup(state.spot.lat, state.spot.lng, road, findCleaningEntries(road), detectSegment);
         }
       });
@@ -460,7 +461,7 @@ export async function init(initialMode: "browsing" | "parked" = "browsing"): Pro
       // Parked mode: show street cleaning popup
       const road = await getStreetName(lat, lng);
       if (road !== null) {
-        const detectSegment = buildDetectSegmentCallback(lat, lng);
+        const detectSegment = buildDetectSegmentCallback(lat, lng, road);
         showStreetPopup(lat, lng, road, findCleaningEntries(road), detectSegment);
       }
     }

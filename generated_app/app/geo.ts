@@ -57,15 +57,32 @@ export function seedGeocodeCache(
 }
 
 /**
- * Geocode a cross-street name (e.g. "9th St") in Hoboken, NJ.
+ * Geocode a cross-street in Hoboken, NJ.
+ * When mainStreet is provided, geocodes the intersection ("crossStreet & mainStreet")
+ * and caches under "mainStreet|crossStreet" — this avoids avenue-centroid errors where
+ * a standalone geocode places the street far from the actual crossing point.
+ * When mainStreet is omitted, behaves as before (standalone geocode, cached by streetName).
  * Results are cached in memory — null is cached too (failure is not retried).
  * Rate-limited to 1 req/sec shared with getStreetName.
  */
 export async function geocodeCrossStreet(
-  streetName: string
+  streetName: string,
+  mainStreet?: string
 ): Promise<{ lat: number; lng: number } | null> {
+  const cacheKey = mainStreet !== undefined ? `${mainStreet}|${streetName}` : streetName;
+  const query = mainStreet !== undefined
+    ? `${streetName} & ${mainStreet}, Hoboken, NJ`
+    : `${streetName}, Hoboken, NJ`;
+
   // Return cached value immediately (no network call)
-  if (_crossStreetCache.has(streetName)) {
+  if (_crossStreetCache.has(cacheKey)) {
+    return _crossStreetCache.get(cacheKey) ?? null;
+  }
+
+  // For intersection keys not yet seeded, use the standalone centroid if available.
+  // The standalone centroid is a reasonable fallback for streets where the centroid is
+  // close to the actual intersection (e.g. short streets or streets near map center).
+  if (mainStreet !== undefined && _crossStreetCache.has(streetName)) {
     return _crossStreetCache.get(streetName) ?? null;
   }
 
@@ -76,7 +93,7 @@ export async function geocodeCrossStreet(
   const timeoutId = setTimeout(() => controller.abort(), NOMINATIM_TIMEOUT_MS);
 
   try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName + ", Hoboken, NJ")}&limit=1`;
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
@@ -88,14 +105,14 @@ export async function geocodeCrossStreet(
 
     if (data.length > 0 && data[0] !== undefined) {
       const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-      _crossStreetCache.set(streetName, result);
+      _crossStreetCache.set(cacheKey, result);
       return result;
     }
 
-    _crossStreetCache.set(streetName, null);
+    _crossStreetCache.set(cacheKey, null);
     return null;
   } catch {
-    _crossStreetCache.set(streetName, null);
+    _crossStreetCache.set(cacheKey, null);
     return null;
   } finally {
     clearTimeout(timeoutId);

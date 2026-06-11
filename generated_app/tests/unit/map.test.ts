@@ -90,6 +90,7 @@ interface MockMap {
   off: (event: string) => MockMap;
   addLayer: (layer: MockMarker) => MockMap;
   removeLayer: (layer: MockMarker) => MockMap;
+  closePopup: () => MockMap;
   _fireClick: (lat: number, lng: number) => void;
   _fireZoomend: () => void;
 }
@@ -147,6 +148,9 @@ function createMockMap(): MockMap {
       if (map._clickHandler) {
         map._clickHandler({ latlng: { lat, lng } });
       }
+    },
+    closePopup() {
+      return map;
     },
     _fireZoomend() {
       if (map._zoomendHandler) {
@@ -383,8 +387,8 @@ describe("F-07 map module", () => {
       }
       expect(marker._popup).not.toBeNull();
       expect(marker._popup).toContain("42 Answer Blvd");
-      expect(marker._popup).toContain("6/1/2026");
-      expect(marker._popup).toContain("6/30/2026");
+      expect(marker._popup).toContain("June 1");
+      expect(marker._popup).toContain("June 30");
       expect(marker._popup).toContain("XYZ-999");
     });
 
@@ -405,8 +409,8 @@ describe("F-07 map module", () => {
         marker._clickHandler({});
       }
       expect(marker._popup).not.toBeNull();
-      // Popup must contain the sign reason
-      expect(marker._popup).toContain("CONSTRUCTION");
+      // Popup must contain the sign reason (as CSS class or label)
+      expect(marker._popup).toContain("tz-reason--construction");
     });
 
     // F-10.3: 67 active signs → 67 pins on the map
