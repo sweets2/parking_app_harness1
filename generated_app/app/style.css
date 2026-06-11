@@ -130,8 +130,8 @@ html, body {
   animation: schedule-breathe 1s ease-in-out infinite;
 }
 @keyframes schedule-warn {
-  0%, 100% { color: #c2410c; }
-  50%       { color: #fb923c; }
+  0%, 100% { color: #ea580c; }
+  50%       { color: #fdba74; }
 }
 .sp-sched--upcoming {
   font-weight: bold;
@@ -151,10 +151,10 @@ html, body {
   min-width: 26px;
 }
 .dir-n, .dir-s { padding: 3px 3px; min-width: 22px; }
-.dir-n::before { content: "▴"; font-size: 9px; line-height: 1; position: absolute; top: 0px;    left: 50%; transform: translateX(calc(-50% + 2px)); }
-.dir-s::after  { content: "▾"; font-size: 9px; line-height: 1; position: absolute; bottom: 0px; left: 50%; transform: translateX(calc(-50% + 2px)); }
-.dir-e::after  { content: "▸"; font-size: 9px; line-height: 1; position: absolute; right: 1px;  top: 50%; transform: translateY(calc(-50% - 2px)); }
-.dir-w::before { content: "◂"; font-size: 9px; line-height: 1; position: absolute; left: 1px;   top: 50%; transform: translateY(calc(-50% - 2px)); }
+.dir-n::before { content: "▴"; font-size: 9px; line-height: 1; position: absolute; top: 0px;    left: 50%; transform: translateX(-50%); }
+.dir-s::after  { content: "▾"; font-size: 9px; line-height: 1; position: absolute; bottom: 0px; left: 50%; transform: translateX(-50%); }
+.dir-e::after  { content: "▸"; font-size: 9px; line-height: 1; position: absolute; right: 1px;  top: 50%; transform: translateY(calc(-50% - 1px)); }
+.dir-w::before { content: "◂"; font-size: 9px; line-height: 1; position: absolute; left: 1px;   top: 50%; transform: translateY(calc(-50% - 1px)); }
 .dir-n { background: #fee2e2; color: #dc2626; padding-top: 5px; }
 .dir-s { background: #dbeafe; color: #1d4ed8; padding-bottom: 5px; }
 .dir-e { background: #dcfce7; color: #15803d; }
