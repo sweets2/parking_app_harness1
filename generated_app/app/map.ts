@@ -267,21 +267,21 @@ function buildSignPopup(sign: Sign, now: Date): string {
   const startFmt = formatSignDateTime(sign.start_date, sign.start_time);
   const endFmt   = formatSignDateTime(sign.stop_date, sign.end_time);
 
-  let statusHtml = "";
-  if (active) {
-    statusHtml = `<div class="tz-status tz-status--active">Active now — ${endFmt}</div>`;
-  } else if (upcoming) {
-    const mins = Math.floor((startMs - nowMs) / 60_000);
-    statusHtml = `<div class="tz-status tz-status--upcoming">Starts in ${mins}m — ${startFmt}</div>`;
-  }
+  const activeHtml   = active
+    ? `<div class="tz-status tz-status--active">Active Now!</div>`
+    : "";
+  const upcomingHtml = upcoming
+    ? `<div class="tz-status tz-status--upcoming">Starts in ${Math.floor((startMs - nowMs) / 60_000)}m — ${startFmt}</div>`
+    : "";
 
   return [
     `<div class="tz-wrap">`,
     `<div class="tz-header"><span class="tz-icon">🚨</span><span class="tz-title">TOW&nbsp;ZONE $$</span></div>`,
+    activeHtml,
     `<hr class="tz-sep"/>`,
     `<div class="tz-address">${sign.address}</div>`,
     `<div class="tz-reason ${reasonClass}">${reasonLabel}</div>`,
-    statusHtml,
+    upcomingHtml,
     `<div class="tz-window">${startFmt} – ${endFmt}</div>`,
     `<div class="tz-permit">Permit ${sign.permit_number}</div>`,
     `</div>`,
