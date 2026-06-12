@@ -11,7 +11,7 @@
     { "street": "9TH ST",       "side": "North", "from": "Jackson St",    "to": "Castle Point Ter", "maxLon": -74.026 },
     { "street": "13TH ST",      "side": "North", "from": "Washington St", "to": "Madison St" },
     { "street": "13TH ST",      "side": "South", "from": "Washington St", "to": "Hudson St" },
-    { "street": "WILLOW AVE",   "side": "West",  "from": "Observer Hwy",  "to": "11th St",        "maxLat": 40.752 },
+    { "street": "WILLOW AVE",   "side": "West",  "from": "Observer Hwy",  "to": "12th St",        "maxLat": 40.753 },
     { "street": "OBSERVER HWY", "side": "Both",  "from": "Newark St",     "to": "Hudson St",      "minLon": -74.042 }
   ]
 }
