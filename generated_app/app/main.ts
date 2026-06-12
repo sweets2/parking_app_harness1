@@ -533,6 +533,13 @@ export async function initBrowserApp(): Promise<void> {
       status.textContent = next ? "Enabled" : "Hidden";
     }
   });
+  // Upcoming signs are hidden by default — sync DOM to match
+  upcomingToggle?.setAttribute("aria-pressed", "false");
+  document.getElementById("upcoming-legend")?.classList.add("upcoming-off");
+  const upcomingInitStatus = document.getElementById("upcoming-legend")?.querySelector(".upcoming-status");
+  if (upcomingInitStatus !== null && upcomingInitStatus !== undefined) {
+    upcomingInitStatus.textContent = "Hidden";
+  }
 
   // Wire garage toggle
   const garageToggle = document.getElementById("garage-toggle");
