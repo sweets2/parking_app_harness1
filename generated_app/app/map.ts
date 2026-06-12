@@ -110,7 +110,7 @@ let _violationLayers: LeafletLayer[] = [];
 let _violationHighlightsVisible = true;
 let _upcomingSignLayers: LeafletLayer[] = [];
 let _upcomingSegmentLayers: LeafletLayer[] = [];
-let _upcomingSignsVisible: boolean = true;
+let _upcomingSignsVisible: boolean = false;
 let _garageLayers: LeafletLayer[] = [];
 let _garageMarkersVisible: boolean = true;
 let _snowRouteLayers: LeafletLayer[] = [];
@@ -203,7 +203,7 @@ export function initMap(): LeafletMap {
   _violationHighlightsVisible = true;
   _upcomingSignLayers = [];
   _upcomingSegmentLayers = [];
-  _upcomingSignsVisible = true;
+  _upcomingSignsVisible = false;
   _garageLayers = [];
   _garageMarkersVisible = true;
   _snowRouteLayers = [];
@@ -1254,10 +1254,10 @@ export function renderUpcomingSignPins(signs: Sign[], now: Date): void {
 
   for (const sign of signs) {
     const icon = L.divIcon({
-      html: UPCOMING_SIGN_ICON,
+      html: signEmoji(sign.reason, false),
       className: "sign-emoji-marker",
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
+      iconSize: [13, 13],
+      iconAnchor: [6, 6],
     });
     const pos = getSnappedPinPosition(sign);
 
