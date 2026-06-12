@@ -1,5 +1,8 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "app",
-  "installCommand": "npm ci"
+  "installCommand": "npm ci",
+  "rewrites": [
+    { "source": "/um/:path*", "destination": "https://cloud.umami.is/:path*" }
+  ]
 }

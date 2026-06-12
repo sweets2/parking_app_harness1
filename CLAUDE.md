@@ -155,6 +155,12 @@ Street cleaning data uses abbreviated names with trailing periods ("Adams St.", 
 **Layout — map fills full viewport, sign-list is hidden**
 `#map` uses `height: 100vh` so the map fills the entire screen. `#sign-list` is `display: none` — the sign card panel has been intentionally removed from the UI. Do not restore the old `calc(100vh - 180px)` height or unhide `#sign-list`. The `#controls` bar is `position: fixed` and overlays the map at the bottom.
 
+**F-37 — Snow route geometry bleeds into Jersey City Heights**
+The OSM bounding box used to build `road-geometry.json` is slightly larger than Hoboken, so generic street names like "3RD ST", "4TH ST", "5TH ST" pick up Jersey City Heights ways at lat ~40.753 — about 0.013° north of Hoboken's actual 3rd St (~40.740). `renderSnowEmergencyRoutes` guards against this with a centroid-lat filter: `HOBOKEN_STREET_LAT` maps each numbered street to its expected Hoboken latitude, and any way whose centroid deviates more than `HOBOKEN_STREET_LAT_TOLERANCE` (0.008°) is skipped. Do not remove this guard — without it, 3 phantom routes appear visually in Jersey City.
+
+**Static data files must be added to the build script's cp block**
+Any feature that writes a new static JSON file to `data/` (e.g. `data/garages.json`, `data/snow-emergency-routes.json`) MUST also add a cp step to the `build` script in `package.json` so the file lands in `app/data/` where the browser fetch can reach it. Omitting this step causes the fire-and-forget fetch to 404 silently and the layer never renders — no console error, no test failure. The pattern is: `(cp data/yourfile.json app/data/yourfile.json 2>/dev/null || true)` chained at the end of the build command.
+
 ---
 
 ## Agent pipeline

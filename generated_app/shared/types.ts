@@ -54,3 +54,26 @@ export interface StreetCleaningData {
 }
 
 export type RoadGeometry = Record<string, [number, number][][]>;
+
+export interface Garage {
+  name: string;       // "Garage B"
+  address: string;    // "28 2nd St"
+  capacity: number;   // 829
+  lat: number;
+  lng: number;
+  phone: string;      // "201-653-7333"
+}
+
+export interface SnowRoute {
+  street: string;  // road-geometry key, e.g. "3RD ST" (uppercase, no periods)
+  side: string;    // "North" | "South" | "Both" | "West" | "East"
+  from: string;    // cross-street label for display only
+  to: string;      // cross-street label for display only
+}
+
+export interface BusStop {
+  id: string;    // stop_id from GTFS stops.txt
+  name: string;  // stop_name from GTFS stops.txt
+  lat: number;   // stop_lat
+  lng: number;   // stop_lon
+}

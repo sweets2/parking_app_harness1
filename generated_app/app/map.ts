@@ -8,9 +8,10 @@
  * In Node tests the global `L` is mocked before this module is imported.
  */
 
-import type { Sign, StreetCleaningEntry, RoadGeometry } from "../shared/types";
+import type { Sign, StreetCleaningEntry, RoadGeometry, Garage, SnowRoute, BusStop } from "../shared/types";
 import type { SavedSpot } from "../shared/storage";
 import { formatTime, getStreetOrientation, isScheduleActiveNow, isScheduleUpcomingSoon, isSignActive } from "../shared/parking-logic";
+import { track } from "./analytics";
 
 // ─── Leaflet type shim ───────────────────────────────────────────────────────
 // We access L as a global (not an import) because it is loaded via CDN.
@@ -110,6 +111,12 @@ let _violationHighlightsVisible = true;
 let _upcomingSignLayers: LeafletLayer[] = [];
 let _upcomingSegmentLayers: LeafletLayer[] = [];
 let _upcomingSignsVisible: boolean = true;
+let _garageLayers: LeafletLayer[] = [];
+let _garageMarkersVisible: boolean = true;
+let _snowRouteLayers: LeafletLayer[] = [];
+let _snowRoutesVisible: boolean = true;
+let _busStopLayers: LeafletLayer[] = [];
+let _busStopsVisible: boolean = false;
 
 const DEFAULT_ZOOM = 15;
 
@@ -194,6 +201,12 @@ export function initMap(): LeafletMap {
   _upcomingSignLayers = [];
   _upcomingSegmentLayers = [];
   _upcomingSignsVisible = true;
+  _garageLayers = [];
+  _garageMarkersVisible = true;
+  _snowRouteLayers = [];
+  _snowRoutesVisible = true;
+  _busStopLayers = [];
+  _busStopsVisible = false;
   map.createPane('upcomingPane');
   const upcomingPaneEl = map.getPane('upcomingPane');
   if (upcomingPaneEl !== undefined) upcomingPaneEl.style.zIndex = '550';
@@ -220,7 +233,14 @@ export function initMap(): LeafletMap {
       _streetPopup.openOn(map);
     }
   };
-  map.on("zoomend", updateIconScale);
+  let _zoomDebounce: ReturnType<typeof setTimeout> | null = null;
+  map.on("zoomend", () => {
+    updateIconScale();
+    if (_zoomDebounce !== null) clearTimeout(_zoomDebounce);
+    _zoomDebounce = setTimeout(() => {
+      track("map-zoomed", { zoom_level: map.getZoom() });
+    }, 300);
+  });
 
   return map;
 }
@@ -1083,6 +1103,184 @@ export function setUpcomingSignsVisible(visible: boolean): void {
     }
   }
   for (const layer of _upcomingSegmentLayers) {
+    if (visible) {
+      layer.addTo(_map);
+    } else {
+      layer.remove();
+    }
+  }
+}
+
+// ─── F-36 Municipal Garage Markers ───────────────────────────────────────────
+
+/**
+ * Render a 🅿 marker for each municipal garage.
+ * Clears existing garage markers before rendering the new set.
+ */
+export function renderGarageMarkers(garages: Garage[], visible: boolean): void {
+  for (const layer of _garageLayers) {
+    layer.remove();
+  }
+  _garageLayers = [];
+
+  if (_map === null) return;
+
+  const L = getL();
+
+  for (const garage of garages) {
+    const icon = L.divIcon({
+      html: `<span class="garage-pin">🅿</span>`,
+      className: "sign-emoji-marker",
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+
+    const marker = L.marker([garage.lat, garage.lng], { icon });
+
+    const popupHtml = [
+      `<div>`,
+      `<strong>${garage.name}</strong><br/>`,
+      `${garage.address}<br/>`,
+      `${garage.capacity} spaces<br/>`,
+      `${garage.phone}`,
+      `</div>`,
+    ].join("");
+    marker.bindPopup(popupHtml);
+
+    _garageMarkersVisible = visible;
+    if (visible) {
+      marker.addTo(_map);
+    }
+    _garageLayers.push(marker);
+  }
+
+  _garageMarkersVisible = visible;
+}
+
+/**
+ * Show or hide all garage markers by adding/removing them from the map.
+ */
+export function setGarageMarkersVisible(visible: boolean): void {
+  _garageMarkersVisible = visible;
+  if (_map === null) return;
+  for (const layer of _garageLayers) {
+    if (visible) {
+      layer.addTo(_map);
+    } else {
+      layer.remove();
+    }
+  }
+}
+
+// ─── F-37 Snow Emergency Routes ──────────────────────────────────────────────
+
+// Hoboken's E-W numbered streets each run at a known latitude.
+// The OSM bounding box used to build road-geometry.json is slightly larger than
+// Hoboken, so streets like "3RD ST" pick up Jersey City Heights ways at
+// lat ~40.753 — about 0.013° north of Hoboken's actual 3rd St (~40.740).
+// A ±0.008° tolerance (~890 m) accepts all legitimate Hoboken ways while
+// rejecting every JC bleed-through observed in the data.
+const HOBOKEN_STREET_LAT: Record<string, number> = {
+  "3RD ST": 40.740, "4TH ST": 40.741, "5TH ST": 40.742,
+  "9TH ST": 40.750, "13TH ST": 40.756,
+};
+const HOBOKEN_STREET_LAT_TOLERANCE = 0.008;
+
+/**
+ * Render blue polylines for each snow emergency route entry.
+ * Iterates all ways in _roadGeometry[route.street] — same convention as
+ * drawStreetHighlight — but uses its own layer array (_snowRouteLayers).
+ * Ways whose centroid latitude deviates more than HOBOKEN_STREET_LAT_TOLERANCE
+ * from the expected Hoboken street latitude are skipped (JC bleed-through guard).
+ */
+export function renderSnowEmergencyRoutes(routes: SnowRoute[], visible: boolean): void {
+  for (const layer of _snowRouteLayers) {
+    layer.remove();
+  }
+  _snowRouteLayers = [];
+  _snowRoutesVisible = visible;
+
+  if (_map === null) return;
+
+  const L = getL();
+
+  for (const route of routes) {
+    const ways = _roadGeometry[route.street];
+    if (ways === undefined || ways.length === 0) continue;
+    const expectedLat = HOBOKEN_STREET_LAT[route.street];
+    for (const way of ways) {
+      if (way.length === 0) continue;
+      if (expectedLat !== undefined) {
+        const centLat = way.reduce((sum, pt) => sum + pt[0], 0) / way.length;
+        if (Math.abs(centLat - expectedLat) > HOBOKEN_STREET_LAT_TOLERANCE) continue;
+      }
+      const layer = L.polyline(way, { color: "#3b82f6", weight: 12, opacity: 0.45 });
+      _snowRouteLayers.push(layer);
+      if (_snowRoutesVisible && _map !== null) {
+        layer.addTo(_map);
+      }
+    }
+  }
+}
+
+/**
+ * Show or hide all snow route polylines.
+ */
+export function setSnowRoutesVisible(visible: boolean): void {
+  _snowRoutesVisible = visible;
+  if (_map === null) return;
+  for (const layer of _snowRouteLayers) {
+    if (visible) {
+      layer.addTo(_map);
+    } else {
+      layer.remove();
+    }
+  }
+}
+
+// ─── F-38 Bus Stop Markers ───────────────────────────────────────────────────
+
+/**
+ * Render a 🚌 marker for each bus stop.
+ * Clears existing bus stop markers before rendering the new set.
+ */
+export function renderBusStopMarkers(stops: BusStop[], visible: boolean): void {
+  for (const layer of _busStopLayers) {
+    layer.remove();
+  }
+  _busStopLayers = [];
+
+  _busStopsVisible = visible;
+
+  if (_map === null) return;
+
+  const L = getL();
+
+  for (const stop of stops) {
+    const icon = L.divIcon({
+      html: "🚌",
+      className: "sign-emoji-marker",
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+    });
+
+    const marker = L.marker([stop.lat, stop.lng], { icon });
+    marker.bindPopup(stop.name);
+
+    if (visible) {
+      marker.addTo(_map);
+    }
+    _busStopLayers.push(marker);
+  }
+}
+
+/**
+ * Show or hide all bus stop markers by adding/removing them from the map.
+ */
+export function setBusStopsVisible(visible: boolean): void {
+  _busStopsVisible = visible;
+  if (_map === null) return;
+  for (const layer of _busStopLayers) {
     if (visible) {
       layer.addTo(_map);
     } else {

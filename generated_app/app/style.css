@@ -428,6 +428,187 @@ html, body {
 #violation-legend.violation-off .violation-road-fill { display: none; }
 #violation-legend.violation-off .violation-status { color: #9ca3af; }
 
+/* ─── Municipal Garages legend ─── */
+#garage-legend {
+  position: fixed;
+  top: 252px;
+  left: 10px;
+  z-index: 1000;
+}
+
+#garage-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+  transition: opacity 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+#garage-toggle:active { background: #f3f4f6; }
+
+.garage-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: #2563eb;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1.5px rgba(37, 99, 235, 0.35);
+  flex-shrink: 0;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.garage-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.garage-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.garage-status {
+  font-size: 10px;
+  font-weight: 600;
+  color: #16a34a;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+#garage-legend.garage-off #garage-toggle { border-color: #e5e7eb; }
+#garage-legend.garage-off .garage-dot { background: #9ca3af; box-shadow: none; }
+#garage-legend.garage-off .garage-status { color: #9ca3af; }
+
+#snow-legend {
+  position: fixed;
+  top: 294px;
+  left: 10px;
+  z-index: 1000;
+}
+
+#snow-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+  transition: opacity 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+#snow-toggle:active { background: #f3f4f6; }
+
+.snow-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1.5px rgba(59, 130, 246, 0.35);
+  flex-shrink: 0;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.snow-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.snow-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.snow-status {
+  font-size: 10px;
+  font-weight: 600;
+  color: #16a34a;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+#snow-legend.snow-off #snow-toggle { border-color: #e5e7eb; }
+#snow-legend.snow-off .snow-dot { background: #9ca3af; box-shadow: none; }
+#snow-legend.snow-off .snow-status { color: #9ca3af; }
+
+#bus-legend {
+  position: fixed;
+  top: 336px;
+  left: 10px;
+  z-index: 1000;
+}
+
+#bus-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+  transition: opacity 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+#bus-toggle:active { background: #f3f4f6; }
+
+.bus-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #7c3aed;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1.5px rgba(124, 58, 237, 0.35);
+  flex-shrink: 0;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.bus-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.bus-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.bus-status {
+  font-size: 10px;
+  font-weight: 600;
+  color: #16a34a;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+#bus-legend.bus-off #bus-toggle { border-color: #e5e7eb; }
+#bus-legend.bus-off .bus-dot { background: #9ca3af; box-shadow: none; }
+#bus-legend.bus-off .bus-status { color: #9ca3af; }
+
 /* Hide tow sign markers — only .leaflet-marker-pane; circleMarkers are unaffected */
 #map.tow-signs-hidden .leaflet-marker-pane {
   display: none;

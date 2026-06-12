@@ -1,0 +1,296 @@
+[
+  {
+    "id": "20488",
+    "name": "14TH ST AT PARK AVE",
+    "lat": 40.75356,
+    "lng": -74.02821999999999
+  },
+  {
+    "id": "20489",
+    "name": "14TH ST AT BLOOMFIELD ST",
+    "lat": 40.75327,
+    "lng": -74.02655
+  },
+  {
+    "id": "20490",
+    "name": "14TH ST AT BLOOMFIELD ST",
+    "lat": 40.75351,
+    "lng": -74.02726
+  },
+  {
+    "id": "20491",
+    "name": "CLINTON ST AT 1ST ST",
+    "lat": 40.73864,
+    "lng": -74.03527
+  },
+  {
+    "id": "20492",
+    "name": "CLINTON ST AT 3RD ST, ST MARY'S MEDICAL CTR",
+    "lat": 40.7411,
+    "lng": -74.03453999999999
+  },
+  {
+    "id": "20494",
+    "name": "CLINTON ST AT 9TH ST",
+    "lat": 40.74837,
+    "lng": -74.03233999999999
+  },
+  {
+    "id": "20495",
+    "name": "CLINTON ST AT 11TH ST",
+    "lat": 40.7509,
+    "lng": -74.03155
+  },
+  {
+    "id": "20496",
+    "name": "HOBOKEN TERMINAL",
+    "lat": 40.735589999999995,
+    "lng": -74.02911
+  },
+  {
+    "id": "20497",
+    "name": "HOBOKEN TERMINAL LANE 6",
+    "lat": 40.73544,
+    "lng": -74.02920999999999
+  },
+  {
+    "id": "20499",
+    "name": "OBSERVER HWY AT WILLOW AVE",
+    "lat": 40.73608,
+    "lng": -74.03461
+  },
+  {
+    "id": "20502",
+    "name": "OBSERVER HWY AT WILLOW AVE",
+    "lat": 40.73637,
+    "lng": -74.03542
+  },
+  {
+    "id": "20503",
+    "name": "OBSERVER HWY AT LUIS MUNOZ MARIN BLVD",
+    "lat": 40.73685,
+    "lng": -74.03822
+  },
+  {
+    "id": "20505",
+    "name": "PATERSON AVE 105'W OF HARRISON ST",
+    "lat": 40.738879999999995,
+    "lng": -74.04249
+  },
+  {
+    "id": "20506",
+    "name": "RIVER ST AT 2ND ST",
+    "lat": 40.73856,
+    "lng": -74.02828
+  },
+  {
+    "id": "20507",
+    "name": "RIVER ST AT 3RD ST",
+    "lat": 40.739419999999996,
+    "lng": -74.02819
+  },
+  {
+    "id": "20508",
+    "name": "WASHINGTON ST AT 1ST ST",
+    "lat": 40.73767,
+    "lng": -74.03078
+  },
+  {
+    "id": "20509",
+    "name": "WASHINGTON ST AT 3RD ST",
+    "lat": 40.740269999999995,
+    "lng": -74.02996999999999
+  },
+  {
+    "id": "20510",
+    "name": "WASHINGTON ST AT 5TH ST",
+    "lat": 40.74241,
+    "lng": -74.02933
+  },
+  {
+    "id": "20511",
+    "name": "WASHINGTON ST AT 7TH ST",
+    "lat": 40.745000000000005,
+    "lng": -74.02853
+  },
+  {
+    "id": "20512",
+    "name": "WASHINGTON ST AT 9TH ST",
+    "lat": 40.74758,
+    "lng": -74.02774
+  },
+  {
+    "id": "20513",
+    "name": "WASHINGTON ST AT 11TH ST",
+    "lat": 40.75016,
+    "lng": -74.02691999999999
+  },
+  {
+    "id": "20514",
+    "name": "WASHINGTON ST AT 13TH ST",
+    "lat": 40.75259,
+    "lng": -74.02618
+  },
+  {
+    "id": "20515",
+    "name": "WASHINGTON ST AT 12TH ST",
+    "lat": 40.75087,
+    "lng": -74.02687999999999
+  },
+  {
+    "id": "20516",
+    "name": "WASHINGTON ST AT 10TH ST",
+    "lat": 40.74831,
+    "lng": -74.02770000000001
+  },
+  {
+    "id": "20517",
+    "name": "WASHINGTON ST AT 8TH ST",
+    "lat": 40.745779999999996,
+    "lng": -74.02844
+  },
+  {
+    "id": "20518",
+    "name": "WASHINGTON ST AT 6TH ST",
+    "lat": 40.74328,
+    "lng": -74.02922
+  },
+  {
+    "id": "20519",
+    "name": "WASHINGTON ST AT 4TH ST",
+    "lat": 40.74102,
+    "lng": -74.0299
+  },
+  {
+    "id": "20520",
+    "name": "WASHINGTON ST AT 2ND ST",
+    "lat": 40.7385,
+    "lng": -74.03065
+  },
+  {
+    "id": "20521",
+    "name": "WASHINGTON ST AT NEWARK ST",
+    "lat": 40.73661,
+    "lng": -74.03123
+  },
+  {
+    "id": "20523",
+    "name": "WILLOW AVE AT 15TH ST",
+    "lat": 40.75532,
+    "lng": -74.02931
+  },
+  {
+    "id": "20524",
+    "name": "WILLOW AVE AT 11TH ST",
+    "lat": 40.750789999999995,
+    "lng": -74.03070000000001
+  },
+  {
+    "id": "20525",
+    "name": "WILLOW AVE AT 9TH ST",
+    "lat": 40.74763,
+    "lng": -74.03166999999999
+  },
+  {
+    "id": "20526",
+    "name": "WILLOW AVE AT 7TH ST",
+    "lat": 40.745129999999996,
+    "lng": -74.03241
+  },
+  {
+    "id": "20527",
+    "name": "WILLOW AVE AT 5TH ST",
+    "lat": 40.74273,
+    "lng": -74.03314
+  },
+  {
+    "id": "20528",
+    "name": "WILLOW AVE AT 4TH ST#",
+    "lat": 40.74176,
+    "lng": -74.03350999999999
+  },
+  {
+    "id": "20529",
+    "name": "WILLOW AVE AT 2ND ST",
+    "lat": 40.739200000000004,
+    "lng": -74.03425
+  },
+  {
+    "id": "30827",
+    "name": "9TH STREET LIGHT RAIL STATION",
+    "lat": 40.74887,
+    "lng": -74.03851999999999
+  },
+  {
+    "id": "30828",
+    "name": "2ND STREET LIGHT RAIL STATION",
+    "lat": 40.74174,
+    "lng": -74.04281
+  },
+  {
+    "id": "30829",
+    "name": "HOBOKEN TERMINAL LIGHT RAIL STATION",
+    "lat": 40.73406,
+    "lng": -74.02919
+  },
+  {
+    "id": "30326",
+    "name": "WILLOW AVE AT 13TH ST",
+    "lat": 40.752379999999995,
+    "lng": -74.03020000000001
+  },
+  {
+    "id": "30846",
+    "name": "TONNELLE - HOBOKEN DEKALB JCT",
+    "lat": 40.73383,
+    "lng": -74.03611
+  },
+  {
+    "id": "30847",
+    "name": "HOBOKEN - BAYONNE DEKALB JCT",
+    "lat": 40.73383,
+    "lng": -74.03611
+  },
+  {
+    "id": "30848",
+    "name": "TONNELLE - WESTSIDE DEKALB JCT",
+    "lat": 40.73375,
+    "lng": -74.03670000000001
+  },
+  {
+    "id": "32084",
+    "name": "WILLOW AVE AT 15TH ST",
+    "lat": 40.75476,
+    "lng": -74.02927
+  },
+  {
+    "id": "33386",
+    "name": "OBSERVER HWY AT BLOOMFIELD ST#",
+    "lat": 40.73571,
+    "lng": -74.03253
+  },
+  {
+    "id": "33387",
+    "name": "OBSERVER HWY AT BLOOMFIELD ST",
+    "lat": 40.735859999999995,
+    "lng": -74.03247999999999
+  },
+  {
+    "id": "33037",
+    "name": "PATERSON AVE AT MARSHALL ST",
+    "lat": 40.73918,
+    "lng": -74.04279
+  },
+  {
+    "id": "33053",
+    "name": "CLINTON ST AT 5TH ST",
+    "lat": 40.74323,
+    "lng": -74.03383
+  },
+  {
+    "id": "33054",
+    "name": "CLINTON ST 75'N OF 7TH ST",
+    "lat": 40.74576,
+    "lng": -74.03305999999999
+  }
+]

@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { Sign, StreetCleaningEntry } from "../../shared/types";
+import type { Sign, StreetCleaningEntry, Garage, SnowRoute } from "../../shared/types";
 import { NOW_STABLE } from "../fixtures/signs";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -1584,5 +1584,286 @@ describe("F-35 upcoming sign rendering", () => {
       expect(marker).toBeDefined();
       expect(Math.abs(marker._lng - (-74.0310))).toBeLessThan(0.0005);
     });
+  });
+});
+
+// ─── F-36 Municipal Garage Markers ───────────────────────────────────────────
+
+describe("F-36 garage markers", () => {
+  function makeGarage(overrides: Partial<Garage> = {}): Garage {
+    return {
+      name: "Garage B",
+      address: "28 2nd St",
+      capacity: 829,
+      lat: 40.736,
+      lng: -74.034,
+      phone: "201-653-7333",
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    installLeafletMock();
+    vi.resetModules();
+  });
+
+  it("GIVEN a garages array of 4 Garage objects and initMap() called, WHEN renderGarageMarkers(garages, true) is called, THEN mockMapInstance._layers contains 4 markers", async () => {
+    const { initMap, renderGarageMarkers } = await import("../../app/map");
+    initMap();
+    const garages = [
+      makeGarage({ name: "Garage B" }),
+      makeGarage({ name: "Garage D", lat: 40.738, lng: -74.029 }),
+      makeGarage({ name: "Garage G", lat: 40.740, lng: -74.028 }),
+      makeGarage({ name: "Midtown Garage", lat: 40.742, lng: -74.033 }),
+    ];
+    renderGarageMarkers(garages, true);
+    expect(mockMapInstance._layers.length).toBe(4);
+  });
+
+  it("GIVEN garage markers have been rendered (visible = true), WHEN renderGarageMarkers(garages, false) is called, THEN mockMapInstance._layers contains 0 garage markers", async () => {
+    const { initMap, renderGarageMarkers } = await import("../../app/map");
+    initMap();
+    const garages = [
+      makeGarage({ name: "Garage B" }),
+      makeGarage({ name: "Garage D", lat: 40.738, lng: -74.029 }),
+      makeGarage({ name: "Garage G", lat: 40.740, lng: -74.028 }),
+      makeGarage({ name: "Midtown Garage", lat: 40.742, lng: -74.033 }),
+    ];
+    renderGarageMarkers(garages, true);
+    renderGarageMarkers(garages, false);
+    expect(mockMapInstance._layers.length).toBe(0);
+  });
+
+  it("GIVEN renderGarageMarkers(garages, false) then renderGarageMarkers(garages, true), WHEN checking mockMapInstance._layers, THEN 4 markers are present on the map", async () => {
+    const { initMap, renderGarageMarkers } = await import("../../app/map");
+    initMap();
+    const garages = [
+      makeGarage({ name: "Garage B" }),
+      makeGarage({ name: "Garage D", lat: 40.738, lng: -74.029 }),
+      makeGarage({ name: "Garage G", lat: 40.740, lng: -74.028 }),
+      makeGarage({ name: "Midtown Garage", lat: 40.742, lng: -74.033 }),
+    ];
+    renderGarageMarkers(garages, false);
+    renderGarageMarkers(garages, true);
+    expect(mockMapInstance._layers.length).toBe(4);
+  });
+
+  it("GIVEN an empty garages array, WHEN renderGarageMarkers([], true) is called, THEN no markers are added and no error is thrown", async () => {
+    const { initMap, renderGarageMarkers } = await import("../../app/map");
+    initMap();
+    expect(() => renderGarageMarkers([], true)).not.toThrow();
+    expect(mockMapInstance._layers.length).toBe(0);
+  });
+
+  it("GIVEN 4 garage markers rendered, WHEN setGarageMarkersVisible(false) is called, THEN all 4 markers are removed from mockMapInstance._layers", async () => {
+    const { initMap, renderGarageMarkers, setGarageMarkersVisible } = await import("../../app/map");
+    initMap();
+    const garages = [
+      makeGarage({ name: "Garage B" }),
+      makeGarage({ name: "Garage D", lat: 40.738, lng: -74.029 }),
+      makeGarage({ name: "Garage G", lat: 40.740, lng: -74.028 }),
+      makeGarage({ name: "Midtown Garage", lat: 40.742, lng: -74.033 }),
+    ];
+    renderGarageMarkers(garages, true);
+    expect(mockMapInstance._layers.length).toBe(4);
+    setGarageMarkersVisible(false);
+    expect(mockMapInstance._layers.length).toBe(0);
+  });
+
+  it("GIVEN 4 garage markers hidden, WHEN setGarageMarkersVisible(true) is called, THEN all 4 markers are re-added to mockMapInstance._layers", async () => {
+    const { initMap, renderGarageMarkers, setGarageMarkersVisible } = await import("../../app/map");
+    initMap();
+    const garages = [
+      makeGarage({ name: "Garage B" }),
+      makeGarage({ name: "Garage D", lat: 40.738, lng: -74.029 }),
+      makeGarage({ name: "Garage G", lat: 40.740, lng: -74.028 }),
+      makeGarage({ name: "Midtown Garage", lat: 40.742, lng: -74.033 }),
+    ];
+    renderGarageMarkers(garages, true);
+    setGarageMarkersVisible(false);
+    expect(mockMapInstance._layers.length).toBe(0);
+    setGarageMarkersVisible(true);
+    expect(mockMapInstance._layers.length).toBe(4);
+  });
+});
+
+// ─── F-37 Snow Emergency Routes ───────────────────────────────────────────────
+
+describe("F-37 snow emergency routes", () => {
+  function makeSnowRoute(overrides: Partial<SnowRoute> = {}): SnowRoute {
+    return {
+      street: "3RD ST",
+      side: "North",
+      from: "Jackson St",
+      to: "River St",
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    installLeafletMock();
+    vi.resetModules();
+  });
+
+  it("GIVEN initMap() called, initRoadGeometry({ '3RD ST': [[[40.744, -74.032], [40.745, -74.032]]] }), and routes = [makeSnowRoute({ street: '3RD ST' })], WHEN renderSnowEmergencyRoutes(routes, true) is called, THEN 1 polyline layer is present in mockMapInstance._layers with color '#3b82f6'", async () => {
+    const { initMap, initRoadGeometry, renderSnowEmergencyRoutes } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "3RD ST": [[[40.744, -74.032], [40.745, -74.032]]] });
+    const routes = [makeSnowRoute({ street: "3RD ST" })];
+    renderSnowEmergencyRoutes(routes, true);
+    const blueLayers = mockMapInstance._layers.filter(
+      (l) => (l as unknown as { _options: Record<string, unknown> })._options["color"] === "#3b82f6"
+    );
+    expect(blueLayers.length).toBe(1);
+  });
+
+  it("GIVEN snow routes have been rendered (visible = true), WHEN renderSnowEmergencyRoutes(routes, false) is called, THEN 0 polylines remain in mockMapInstance._layers", async () => {
+    const { initMap, initRoadGeometry, renderSnowEmergencyRoutes } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "3RD ST": [[[40.744, -74.032], [40.745, -74.032]]] });
+    const routes = [makeSnowRoute({ street: "3RD ST" })];
+    renderSnowEmergencyRoutes(routes, true);
+    expect(mockMapInstance._layers.length).toBe(1);
+    renderSnowEmergencyRoutes(routes, false);
+    expect(mockMapInstance._layers.length).toBe(0);
+  });
+
+  it("GIVEN a route whose street key does not exist in road geometry, WHEN renderSnowEmergencyRoutes([makeSnowRoute({ street: 'NONEXISTENT ST' })], true) is called, THEN no polyline is added and no error is thrown", async () => {
+    const { initMap, initRoadGeometry, renderSnowEmergencyRoutes } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({});
+    expect(() => renderSnowEmergencyRoutes([makeSnowRoute({ street: "NONEXISTENT ST" })], true)).not.toThrow();
+    expect(mockMapInstance._layers.length).toBe(0);
+  });
+
+  it("GIVEN geometry for '13TH ST' and two routes with street '13TH ST' but different sides ('North' and 'South'), WHEN renderSnowEmergencyRoutes(routes, true) is called, THEN 2 polyline layers are present in mockMapInstance._layers (one per route entry per way)", async () => {
+    const { initMap, initRoadGeometry, renderSnowEmergencyRoutes } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "13TH ST": [[[40.750, -74.032], [40.751, -74.032]]] });
+    const routes = [
+      makeSnowRoute({ street: "13TH ST", side: "North" }),
+      makeSnowRoute({ street: "13TH ST", side: "South" }),
+    ];
+    renderSnowEmergencyRoutes(routes, true);
+    const blueLayers = mockMapInstance._layers.filter(
+      (l) => (l as unknown as { _options: Record<string, unknown> })._options["color"] === "#3b82f6"
+    );
+    expect(blueLayers.length).toBe(2);
+  });
+
+  it("GIVEN snow routes have been rendered, WHEN setSnowRoutesVisible(false) is called, THEN all snow polylines are removed from mockMapInstance._layers", async () => {
+    const { initMap, initRoadGeometry, renderSnowEmergencyRoutes, setSnowRoutesVisible } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "3RD ST": [[[40.744, -74.032], [40.745, -74.032]]] });
+    const routes = [makeSnowRoute({ street: "3RD ST" })];
+    renderSnowEmergencyRoutes(routes, true);
+    expect(mockMapInstance._layers.length).toBe(1);
+    setSnowRoutesVisible(false);
+    expect(mockMapInstance._layers.length).toBe(0);
+  });
+
+  it("GIVEN snow routes have been hidden, WHEN setSnowRoutesVisible(true) is called, THEN all snow polylines are re-added to mockMapInstance._layers", async () => {
+    const { initMap, initRoadGeometry, renderSnowEmergencyRoutes, setSnowRoutesVisible } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "3RD ST": [[[40.744, -74.032], [40.745, -74.032]]] });
+    const routes = [makeSnowRoute({ street: "3RD ST" })];
+    renderSnowEmergencyRoutes(routes, true);
+    setSnowRoutesVisible(false);
+    expect(mockMapInstance._layers.length).toBe(0);
+    setSnowRoutesVisible(true);
+    expect(mockMapInstance._layers.length).toBe(1);
+  });
+});
+
+// ─── F-38 Bus Stop Markers ────────────────────────────────────────────────────
+
+import type { BusStop } from "../../shared/types";
+
+describe("F-38 bus stop markers", () => {
+  function makeBusStop(overrides: Partial<BusStop> = {}): BusStop {
+    return {
+      id: "stop-1",
+      name: "Washington St & 1st St",
+      lat: 40.736,
+      lng: -74.034,
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    installLeafletMock();
+    vi.resetModules();
+  });
+
+  it("GIVEN a stops array of 3 BusStop objects and initMap() called, WHEN renderBusStopMarkers(stops, true) is called, THEN mockMapInstance._layers contains 3 markers", async () => {
+    const { initMap, renderBusStopMarkers } = await import("../../app/map");
+    initMap();
+    const stops = [
+      makeBusStop({ id: "s1" }),
+      makeBusStop({ id: "s2", lat: 40.737 }),
+      makeBusStop({ id: "s3", lat: 40.738 }),
+    ];
+    renderBusStopMarkers(stops, true);
+    expect(mockMapInstance._layers.length).toBe(3);
+  });
+
+  it("GIVEN bus stop markers have been rendered (visible = true), WHEN renderBusStopMarkers(stops, false) is called, THEN mockMapInstance._layers contains 0 markers", async () => {
+    const { initMap, renderBusStopMarkers } = await import("../../app/map");
+    initMap();
+    const stops = [
+      makeBusStop({ id: "s1" }),
+      makeBusStop({ id: "s2", lat: 40.737 }),
+      makeBusStop({ id: "s3", lat: 40.738 }),
+    ];
+    renderBusStopMarkers(stops, true);
+    renderBusStopMarkers(stops, false);
+    expect(mockMapInstance._layers.length).toBe(0);
+  });
+
+  it("GIVEN renderBusStopMarkers(stops, false) is called on initial render (visible = false), THEN no markers are present in mockMapInstance._layers", async () => {
+    const { initMap, renderBusStopMarkers } = await import("../../app/map");
+    initMap();
+    const stops = [
+      makeBusStop({ id: "s1" }),
+      makeBusStop({ id: "s2", lat: 40.737 }),
+    ];
+    renderBusStopMarkers(stops, false);
+    expect(mockMapInstance._layers.length).toBe(0);
+  });
+
+  it("GIVEN an empty stops array, WHEN renderBusStopMarkers([], true) is called, THEN no markers are added and no error is thrown", async () => {
+    const { initMap, renderBusStopMarkers } = await import("../../app/map");
+    initMap();
+    expect(() => renderBusStopMarkers([], true)).not.toThrow();
+    expect(mockMapInstance._layers.length).toBe(0);
+  });
+
+  it("GIVEN 3 bus stop markers rendered (visible = true), WHEN setBusStopsVisible(false) is called, THEN all markers are removed from mockMapInstance._layers", async () => {
+    const { initMap, renderBusStopMarkers, setBusStopsVisible } = await import("../../app/map");
+    initMap();
+    const stops = [
+      makeBusStop({ id: "s1" }),
+      makeBusStop({ id: "s2", lat: 40.737 }),
+      makeBusStop({ id: "s3", lat: 40.738 }),
+    ];
+    renderBusStopMarkers(stops, true);
+    expect(mockMapInstance._layers.length).toBe(3);
+    setBusStopsVisible(false);
+    expect(mockMapInstance._layers.length).toBe(0);
+  });
+
+  it("GIVEN bus stop markers hidden, WHEN setBusStopsVisible(true) is called, THEN all markers are re-added to mockMapInstance._layers", async () => {
+    const { initMap, renderBusStopMarkers, setBusStopsVisible } = await import("../../app/map");
+    initMap();
+    const stops = [
+      makeBusStop({ id: "s1" }),
+      makeBusStop({ id: "s2", lat: 40.737 }),
+      makeBusStop({ id: "s3", lat: 40.738 }),
+    ];
+    renderBusStopMarkers(stops, true);
+    setBusStopsVisible(false);
+    expect(mockMapInstance._layers.length).toBe(0);
+    setBusStopsVisible(true);
+    expect(mockMapInstance._layers.length).toBe(3);
   });
 });

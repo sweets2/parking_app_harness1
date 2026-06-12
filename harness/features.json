@@ -855,9 +855,11 @@
   {
     "id": "F-36",
     "name": "Municipal Garages Layer",
-    "status": "TODO",
+    "status": "DONE",
     "order": 44,
-    "depends_on": ["F-35"],
+    "depends_on": [
+      "F-35"
+    ],
     "context_files": [
       "app/map.ts",
       "app/main.ts",
@@ -880,9 +882,11 @@
   {
     "id": "F-37",
     "name": "Snow Emergency Routes Layer",
-    "status": "TODO",
+    "status": "DONE",
     "order": 45,
-    "depends_on": ["F-36"],
+    "depends_on": [
+      "F-36"
+    ],
     "context_files": [
       "app/map.ts",
       "app/main.ts",
@@ -905,9 +909,11 @@
   {
     "id": "F-38",
     "name": "Bus Stops Layer",
-    "status": "TODO",
+    "status": "DONE",
     "order": 46,
-    "depends_on": ["F-37"],
+    "depends_on": [
+      "F-37"
+    ],
     "context_files": [
       "app/map.ts",
       "app/main.ts",
@@ -934,9 +940,11 @@
   {
     "id": "F-39",
     "name": "Umami Analytics",
-    "status": "TODO",
+    "status": "DONE",
     "order": 47,
-    "depends_on": ["F-38"],
+    "depends_on": [
+      "F-38"
+    ],
     "context_files": [
       "app/main.ts",
       "app/map.ts",

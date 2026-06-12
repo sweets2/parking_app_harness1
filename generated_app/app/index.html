@@ -7,6 +7,14 @@
     <link rel="manifest" href="manifest.json" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css" />
+    <!-- TODO before deploying: replace REPLACE_WITH_UMAMI_WEBSITE_ID and REPLACE_WITH_VERCEL_DOMAIN -->
+    <script
+      defer
+      src="/um/script.js"
+      data-website-id="REPLACE_WITH_UMAMI_WEBSITE_ID"
+      data-domains="REPLACE_WITH_VERCEL_DOMAIN"
+      data-auto-track="false"
+    ></script>
   </head>
   <body>
     <div id="map"></div>
@@ -51,6 +59,33 @@
         <span class="violation-label">
           <span class="violation-title">Street<br>Highlights</span>
           <span class="violation-status">Enabled</span>
+        </span>
+      </button>
+    </div>
+    <div id="garage-legend">
+      <button id="garage-toggle" aria-pressed="true" title="Show or hide municipal garages">
+        <span class="garage-dot"></span>
+        <span class="garage-label">
+          <span class="garage-title">Garages</span>
+          <span class="garage-status">Enabled</span>
+        </span>
+      </button>
+    </div>
+    <div id="snow-legend">
+      <button id="snow-toggle" aria-pressed="true" title="Show or hide snow emergency routes">
+        <span class="snow-dot"></span>
+        <span class="snow-label">
+          <span class="snow-title">Snow Routes</span>
+          <span class="snow-status">Enabled</span>
+        </span>
+      </button>
+    </div>
+    <div id="bus-legend" class="bus-off">
+      <button id="bus-toggle" aria-pressed="false" title="Show or hide bus stops">
+        <span class="bus-dot"></span>
+        <span class="bus-label">
+          <span class="bus-title">Bus Stops</span>
+          <span class="bus-status">Hidden</span>
         </span>
       </button>
     </div>

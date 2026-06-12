@@ -5,6 +5,8 @@
  * Exports initFeedback() which wires all DOM event listeners.
  */
 
+import { track } from "./analytics";
+
 /**
  * initFeedback(): void
  *
@@ -45,6 +47,7 @@ export function initFeedback(): void {
   btn.addEventListener("click", () => {
     overlay.classList.add("open");
     overlay.setAttribute("aria-hidden", "false");
+    track("feedback-opened");
     textArea.focus();
   });
 
@@ -76,6 +79,7 @@ export function initFeedback(): void {
         if (response.ok) {
           confirmEl.textContent = "Thanks — feedback received!";
           confirmEl.className = "success";
+          track("feedback-submitted");
           setTimeout(() => closeModal(), 2200);
         } else {
           confirmEl.textContent = "Something went wrong. Please try again.";

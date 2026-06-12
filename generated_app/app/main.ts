@@ -12,6 +12,7 @@
  */
 
 import { initFeedback } from "./feedback";
+import { track } from "./analytics";
 import {
   initMap,
   registerMapClickHandler,
@@ -31,6 +32,12 @@ import {
   renderUpcomingSignPins,
   renderUpcomingTowSegments,
   setUpcomingSignsVisible,
+  renderGarageMarkers,
+  setGarageMarkersVisible,
+  renderSnowEmergencyRoutes,
+  setSnowRoutesVisible,
+  renderBusStopMarkers,
+  setBusStopsVisible,
 } from "./map";
 import { getStreetName, geocodeCrossStreet, seedGeocodeCache } from "./geo";
 import { createApp } from "./app";
@@ -45,7 +52,7 @@ import {
 } from "../shared/parking-logic";
 import { createSpotStorage } from "../shared/storage";
 import type { SavedSpot } from "../shared/storage";
-import type { Sign, StreetCleaningEntry, StreetCleaningData, RoadGeometry } from "../shared/types";
+import type { Sign, StreetCleaningEntry, StreetCleaningData, RoadGeometry, Garage, SnowRoute, BusStop } from "../shared/types";
 import {
   renderLoading,
   hideLoading,
@@ -70,6 +77,12 @@ let _fetchedAt: string = new Date().toISOString();
  * on every 60-second tick.
  */
 let _centeredOnSpot = false;
+
+/**
+ * Tracks the last banner state so tow-warning-shown and safe-banner-shown
+ * fire only on transitions, not on every 60-second tick.
+ */
+let _lastAlertState: "warn" | "clear" | null = null;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -191,6 +204,7 @@ function renderState(state: AppState): void {
     appMode = "browsing";
     // Reset the centering flag so the next parked session centers fresh (F-11.1).
     _centeredOnSpot = false;
+    _lastAlertState = null;
     renderBrowsingMode(state.activeSigns, now);
     renderSignPins(state.activeSigns, now);
     renderTowSegments(state.activeSigns);
@@ -208,6 +222,7 @@ function renderState(state: AppState): void {
     if (!_centeredOnSpot) {
       centerOnSpot(state.spot);
       _centeredOnSpot = true;
+      track("parked-mode-entered", { nearby_signs: state.nearbySigns.length });
       // Auto-open street popup for the saved spot's location (initial save and reload).
       void getStreetName(state.spot.lat, state.spot.lng).then((road) => {
         if (road !== null) {
@@ -218,10 +233,19 @@ function renderState(state: AppState): void {
     }
 
     // F-11.2 / F-11.3: Show green "clear" banner or red warning banner.
+    // Deduped: only fire analytics events on state transitions, not every 60-second tick.
     if (state.nearbySigns.length > 0) {
       renderWarningBanner(state.nearbySigns, now);
+      if (_lastAlertState !== "warn") {
+        track("tow-warning-shown", { sign_count: state.nearbySigns.length });
+        _lastAlertState = "warn";
+      }
     } else {
       renderClearBanner();
+      if (_lastAlertState !== "clear") {
+        track("safe-banner-shown");
+        _lastAlertState = "clear";
+      }
     }
 
     // Show all active sign pins in parked mode (not just nearby ones).
@@ -377,6 +401,7 @@ export async function initBrowserApp(): Promise<void> {
 
   // Create app state machine
   const app: App = createApp({ storage, renderState }, signsData);
+  track("app-loaded");
 
   // Update appMode to match the app's initial state
   const initialState = app.getState();
@@ -390,6 +415,26 @@ export async function initBrowserApp(): Promise<void> {
   }
   scheduleViolationRefresh(app.getState.bind(app));
 
+  // Fire-and-forget: fetch municipal garages and render markers.
+  fetch("data/garages.json")
+    .then((r) => r.json())
+    .then((garages: Garage[]) => { renderGarageMarkers(garages, true); })
+    .catch(() => { /* non-fatal */ });
+
+  // Fire-and-forget: fetch snow emergency routes and render blue polylines.
+  fetch("data/snow-emergency-routes.json")
+    .then((r) => r.json())
+    .then(({ routes }: { routes: SnowRoute[] }) => {
+      renderSnowEmergencyRoutes(routes, true);
+    })
+    .catch(() => { /* non-fatal */ });
+
+  // Fire-and-forget: fetch bus stops and render markers (off by default).
+  fetch("data/bus-stops.json")
+    .then((r) => r.json())
+    .then((stops: BusStop[]) => { renderBusStopMarkers(stops, false); })
+    .catch(() => { /* non-fatal */ });
+
   // Wire tow-zones legend toggle
   const towLegend = document.getElementById("tow-legend");
   const towToggle = document.getElementById("tow-toggle");
@@ -398,6 +443,7 @@ export async function initBrowserApp(): Promise<void> {
     towToggle.addEventListener("click", () => {
       const isOn = !towLegend.classList.contains("tow-off");
       setTowSignsVisible(!isOn);
+      track("tow-zones-toggled", { enabled: !isOn });
       towLegend.classList.toggle("tow-off", isOn);
       towToggle.setAttribute("aria-pressed", String(!isOn));
       if (towStatus !== null) {
@@ -414,6 +460,7 @@ export async function initBrowserApp(): Promise<void> {
     violationToggle.addEventListener("click", () => {
       const isOn = !violationLegend.classList.contains("violation-off");
       setViolationHighlightsVisible(!isOn);
+      track("violation-highlights-toggled", { enabled: !isOn });
       violationLegend.classList.toggle("violation-off", isOn);
       violationToggle.setAttribute("aria-pressed", String(!isOn));
       if (violationStatus !== null) {
@@ -428,9 +475,55 @@ export async function initBrowserApp(): Promise<void> {
     const isOn = upcomingToggle.getAttribute("aria-pressed") === "true";
     const next = !isOn;
     setUpcomingSignsVisible(next);
+    track("upcoming-signs-toggled", { enabled: next });
     upcomingToggle.setAttribute("aria-pressed", String(next));
     document.getElementById("upcoming-legend")?.classList.toggle("upcoming-off", !next);
     const status = document.getElementById("upcoming-legend")?.querySelector(".upcoming-status");
+    if (status !== null && status !== undefined) {
+      status.textContent = next ? "Enabled" : "Hidden";
+    }
+  });
+
+  // Wire garage toggle
+  const garageToggle = document.getElementById("garage-toggle");
+  garageToggle?.addEventListener("click", () => {
+    const isOn = garageToggle.getAttribute("aria-pressed") === "true";
+    const next = !isOn;
+    setGarageMarkersVisible(next);
+    track("garages-toggled", { enabled: next });
+    garageToggle.setAttribute("aria-pressed", String(next));
+    document.getElementById("garage-legend")?.classList.toggle("garage-off", !next);
+    const status = document.getElementById("garage-legend")?.querySelector(".garage-status");
+    if (status !== null && status !== undefined) {
+      status.textContent = next ? "Enabled" : "Hidden";
+    }
+  });
+
+  // Wire snow routes toggle
+  const snowToggle = document.getElementById("snow-toggle");
+  snowToggle?.addEventListener("click", () => {
+    const isOn = snowToggle.getAttribute("aria-pressed") === "true";
+    const next = !isOn;
+    setSnowRoutesVisible(next);
+    track("snow-routes-toggled", { enabled: next });
+    snowToggle.setAttribute("aria-pressed", String(next));
+    document.getElementById("snow-legend")?.classList.toggle("snow-off", !next);
+    const status = document.getElementById("snow-legend")?.querySelector(".snow-status");
+    if (status !== null && status !== undefined) {
+      status.textContent = next ? "Enabled" : "Hidden";
+    }
+  });
+
+  // Wire bus stops toggle
+  const busToggle = document.getElementById("bus-toggle");
+  busToggle?.addEventListener("click", () => {
+    const isOn = busToggle.getAttribute("aria-pressed") === "true";
+    const next = !isOn;
+    setBusStopsVisible(next);
+    track("bus-stops-toggled", { enabled: next });
+    busToggle.setAttribute("aria-pressed", String(next));
+    document.getElementById("bus-legend")?.classList.toggle("bus-off", !next);
+    const status = document.getElementById("bus-legend")?.querySelector(".bus-status");
     if (status !== null && status !== undefined) {
       status.textContent = next ? "Enabled" : "Hidden";
     }
@@ -440,6 +533,7 @@ export async function initBrowserApp(): Promise<void> {
   const locateBtn = document.getElementById("locate-btn");
   if (locateBtn !== null) {
     locateBtn.addEventListener("click", () => {
+      track("locate-requested");
       if (!("geolocation" in navigator)) return;
       locateBtn.setAttribute("disabled", "");
       navigator.geolocation.getCurrentPosition(
@@ -461,6 +555,7 @@ export async function initBrowserApp(): Promise<void> {
   const clearBtn = document.getElementById("clear-btn");
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
+      track("spot-cleared");
       clearSpotMarker();
       app.onClearSpot();
     });
@@ -470,6 +565,7 @@ export async function initBrowserApp(): Promise<void> {
   const hereBtn = document.getElementById("here-btn");
   if (hereBtn) {
     hereBtn.addEventListener("click", () => {
+      track("here-now-tapped");
       const state = app.getState();
       if (state.mode === "parked") {
         centerOnSpot(state.spot);
@@ -481,6 +577,7 @@ export async function initBrowserApp(): Promise<void> {
   registerMapClickHandler((lat: number, lng: number) => {
     // Reset so renderState re-centers and re-opens the popup for the new location.
     _centeredOnSpot = false;
+    track(appMode === "parked" ? "spot-moved" : "spot-saved");
     const spot: SavedSpot = {
       lat,
       lng,

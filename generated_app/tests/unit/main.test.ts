@@ -46,6 +46,12 @@ vi.mock("../../app/map", () => ({
   renderUpcomingSignPins: vi.fn(),
   renderUpcomingTowSegments: vi.fn(),
   setUpcomingSignsVisible: vi.fn(),
+  renderGarageMarkers: vi.fn(),
+  setGarageMarkersVisible: vi.fn(),
+  renderSnowEmergencyRoutes: vi.fn(),
+  setSnowRoutesVisible: vi.fn(),
+  renderBusStopMarkers: vi.fn(),
+  setBusStopsVisible: vi.fn(),
 }));
 
 // ─── Mock app/ui ──────────────────────────────────────────────────────────────
