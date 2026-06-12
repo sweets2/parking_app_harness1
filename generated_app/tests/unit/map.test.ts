@@ -1574,6 +1574,94 @@ describe("F-34 violation highlights", () => {
     expect(L.polyline.mock.calls.length).toBe(1);
     expect((L.polyline.mock.calls[0] as [unknown, Record<string, unknown>])[1]).toMatchObject({ color: "#ef4444" });
   });
+
+  it(
+    "GIVEN East=active on '1st St. to 7th St.' and East=upcoming on '7th St. to 14th St.', " +
+    "WHEN renderViolationHighlights called, " +
+    "THEN each block renders its own status color (red active, orange upcoming)",
+    async () => {
+      const { initMap, initRoadGeometry, renderViolationHighlights } =
+        await import("../../app/map");
+      initMap();
+      initRoadGeometry({
+        // N-S main street: two disconnected way groups in clearly separate lat ranges
+        "BLOOMFIELD ST": [
+          [[40.730, -74.044], [40.733, -74.044]],   // way in 1st–7th block
+          [[40.741, -74.044], [40.745, -74.044]],   // way in 7th–14th block
+        ],
+        // E-W cross streets: point at lng -74.040 (dist 0.004 < 0.005 threshold from main)
+        "1ST ST":  [[[40.730, -74.050], [40.730, -74.040]]],
+        "7TH ST":  [[[40.737, -74.050], [40.737, -74.040]]],
+        "14TH ST": [[[40.745, -74.050], [40.745, -74.040]]],
+      });
+
+      const ACTIVE_BLOCK: StreetCleaningEntry = {
+        street: "Bloomfield Street",
+        side: "East",
+        schedule: "Monday through Friday   11 am – 1 pm",  // active at NOW_STABLE
+        location: "1st St. to 7th St.",
+      };
+      const UPCOMING_BLOCK: StreetCleaningEntry = {
+        street: "Bloomfield Street",
+        side: "East",
+        schedule: "Monday through Friday   1 pm – 2 pm",   // upcoming at NOW_STABLE
+        location: "7th St. to 14th St.",
+      };
+
+      renderViolationHighlights([ACTIVE_BLOCK, UPCOMING_BLOCK], NOW_STABLE);
+
+      const L = (globalThis as Record<string, unknown>)["L"] as {
+        polyline: ReturnType<typeof vi.fn>;
+      };
+      const colors = (
+        L.polyline.mock.calls as [unknown, { color: string }][]
+      ).map(([, opts]) => opts.color);
+
+      // Old code keys by (street, side): active wins for entire East side → only red.
+      // New code keys by (street, side, location): each block keeps its own color.
+      expect(colors).toContain("#ef4444");   // active block → red
+      expect(colors).toContain("#f97316");   // upcoming block → orange
+      expect(L.polyline.mock.calls.length).toBe(2);
+    },
+  );
+
+  it(
+    "GIVEN E-W way that straddles the west lng boundary, " +
+    "WHEN renderViolationHighlights called, " +
+    "THEN polyline first point is clipped to boundary lng (not original outside lng)",
+    async () => {
+      const { initMap, initRoadGeometry, renderViolationHighlights } =
+        await import("../../app/map");
+      initMap();
+      initRoadGeometry({
+        // E-W main street: one way whose west end (-74.0416) is outside Monroe bound
+        "OBSERVER HWY": [[[40.744, -74.0416], [40.744, -74.0409]]],
+        // N-S cross streets at the block boundaries
+        "MONROE ST":    [[[40.740, -74.0411], [40.748, -74.0411]]],
+        "JEFFERSON ST": [[[40.740, -74.0388], [40.748, -74.0388]]],
+      });
+
+      const entry: StreetCleaningEntry = {
+        street: "Observer Highway",
+        side: "Both",
+        schedule: "Monday through Friday   11 am – 1 pm",  // active at NOW_STABLE
+        location: "Monroe St. to Jefferson St.",
+      };
+
+      renderViolationHighlights([entry], NOW_STABLE);
+
+      const L = (globalThis as Record<string, unknown>)["L"] as {
+        polyline: ReturnType<typeof vi.fn>;
+      };
+      expect(L.polyline.mock.calls.length).toBe(1);
+      const latlngs = (L.polyline.mock.calls[0] as [[number, number][], unknown])[0];
+      // parseLocationBounds pads by 0.0003°: Monroe bound = -74.0411 - 0.0003 = -74.0414
+      // Interpolated entry should land at -74.0414, not the original -74.0416
+      expect(latlngs[0][1]).toBeCloseTo(-74.0414, 5);
+      // Inside point is unchanged
+      expect(latlngs[latlngs.length - 1][1]).toBeCloseTo(-74.0409, 5);
+    },
+  );
 });
 
 // ─── F-35 upcoming sign rendering ────────────────────────────────────────────

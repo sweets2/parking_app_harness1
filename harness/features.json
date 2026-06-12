@@ -1070,5 +1070,24 @@
       "specs/F-44.md"
     ],
     "run_tests": true
+  },
+  {
+    "id": "F-45",
+    "name": "Fix: Street Cleaning Block-Level Highlight Clipping",
+    "status": "DONE",
+    "order": 53,
+    "depends_on": [
+      "F-44"
+    ],
+    "context_files": [
+      "app/map.ts",
+      "tests/unit/map.test.ts"
+    ],
+    "output_files": [
+      "app/map.ts",
+      "tests/unit/map.test.ts",
+      "specs/F-45.md"
+    ],
+    "run_tests": true
   }
 ]

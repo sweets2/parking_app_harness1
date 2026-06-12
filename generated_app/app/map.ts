@@ -1047,6 +1047,8 @@ const ORDINAL_TO_NUMERIC: Record<string, string> = {
   THIRTEENTH: "13TH", FOURTEENTH: "14TH", FIFTEENTH: "15TH", SIXTEENTH: "16TH",
 };
 
+const LOCATION_RANGE_RE = /^(.+?)\s+to\s+(.+?)$/i;
+
 function normalizeToGeometryKey(name: string): string {
   return name
     .toUpperCase()
@@ -1062,6 +1064,124 @@ function normalizeToGeometryKey(name: string): string {
     .replace(/\bTERRACE\b/g, "TER")
     .replace(/\b(FIRST|SECOND|THIRD|FOURTH|FIFTH|SIXTH|SEVENTH|EIGHTH|NINTH|TENTH|ELEVENTH|TWELFTH|THIRTEENTH|FOURTEENTH|FIFTEENTH|SIXTEENTH)\b/g, m => ORDINAL_TO_NUMERIC[m] ?? m)
     .trim();
+}
+
+function medianOf(arr: number[]): number {
+  const s = [...arr].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)] ?? 0;
+}
+
+function getCrossStreetCoord(
+  crossKey: string,
+  mainCoord: number,
+  axis: "lat" | "lng",
+): number | null {
+  const ways = _roadGeometry[crossKey];
+  if (ways === undefined || ways.length === 0) return null;
+  let best: number | null = null;
+  let bestDist = Infinity;
+  for (const way of ways) {
+    for (const pt of way) {
+      const dist = Math.abs((axis === "lat" ? pt[0] : pt[1]) - mainCoord);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = axis === "lat" ? pt[1] : pt[0];
+      }
+    }
+  }
+  // 0.005° ≈ 400 m on either axis — generous enough for Hoboken's grid
+  if (best === null || bestDist > 0.005) return null;
+  return best;
+}
+
+// Returns { axis, min, max } where axis tells renderViolationHighlights which
+// dimension to filter ways by. E-W streets (lng spread > lat spread) are clipped
+// by longitude; N-S streets are clipped by latitude.
+type LocationBounds = { axis: "lat" | "lng"; min: number; max: number };
+
+function parseLocationBounds(
+  location: string,
+  streetKey: string,
+): LocationBounds | null {
+  const match = LOCATION_RANGE_RE.exec(location);
+  if (match === null) return null;
+  const fromKey = normalizeToGeometryKey(match[1] ?? "");
+  const toKey   = normalizeToGeometryKey(match[2] ?? "");
+
+  const ways = _roadGeometry[streetKey];
+  if (ways === undefined || ways.length === 0) return null;
+  const allPts = ways.flat();
+  const lats = allPts.map(pt => pt[0]);
+  const lngs = allPts.map(pt => pt[1]);
+  const latSpread = Math.max(...lats) - Math.min(...lats);
+  const lngSpread = Math.max(...lngs) - Math.min(...lngs);
+
+  const PAD = 0.0003;
+  // N-S street: lat varies more → cross streets run E-W → find their lat
+  // E-W street: lng varies more → cross streets run N-S → find their lng
+  if (latSpread >= lngSpread) {
+    const mainLng = medianOf(lngs);
+    const coordA = getCrossStreetCoord(fromKey, mainLng, "lng");
+    const coordB = getCrossStreetCoord(toKey,   mainLng, "lng");
+    if (coordA === null || coordB === null) return null;
+    return { axis: "lat", min: Math.min(coordA, coordB) - PAD, max: Math.max(coordA, coordB) + PAD };
+  } else {
+    const mainLat = medianOf(lats);
+    const coordA = getCrossStreetCoord(fromKey, mainLat, "lat");
+    const coordB = getCrossStreetCoord(toKey,   mainLat, "lat");
+    if (coordA === null || coordB === null) return null;
+    return { axis: "lng", min: Math.min(coordA, coordB) - PAD, max: Math.max(coordA, coordB) + PAD };
+  }
+}
+
+function clipWaysToBounds(
+  ways: [number, number][][],
+  min: number,
+  max: number,
+  axis: "lat" | "lng",
+): [number, number][][] {
+  const result: [number, number][][] = [];
+  for (const way of ways) {
+    let current: [number, number][] = [];
+    for (let i = 0; i < way.length; i++) {
+      const pt = way[i];
+      if (pt === undefined) continue;
+      const coord = axis === "lat" ? pt[0] : pt[1];
+      const inside = coord >= min && coord <= max;
+      const prevPt = i > 0 ? way[i - 1] : undefined;
+      const prevCoord = prevPt !== undefined
+        ? (axis === "lat" ? prevPt[0] : prevPt[1])
+        : undefined;
+      const prevInside = prevCoord !== undefined && prevCoord >= min && prevCoord <= max;
+
+      if (inside) {
+        if (prevPt !== undefined && !prevInside && prevCoord !== undefined && coord !== prevCoord) {
+          // outside→inside: interpolate entry point on boundary
+          const bound = prevCoord < min ? min : max;
+          const t = (bound - prevCoord) / (coord - prevCoord);
+          current.push([
+            prevPt[0] + t * (pt[0] - prevPt[0]),
+            prevPt[1] + t * (pt[1] - prevPt[1]),
+          ]);
+        }
+        current.push(pt);
+      } else {
+        if (prevInside && prevPt !== undefined && prevCoord !== undefined && coord !== prevCoord) {
+          // inside→outside: interpolate exit point on boundary
+          const bound = coord < min ? min : max;
+          const t = (bound - prevCoord) / (coord - prevCoord);
+          current.push([
+            prevPt[0] + t * (pt[0] - prevPt[0]),
+            prevPt[1] + t * (pt[1] - prevPt[1]),
+          ]);
+        }
+        if (current.length >= 2) result.push(current);
+        current = [];
+      }
+    }
+    if (current.length >= 2) result.push(current);
+  }
+  return result;
 }
 
 function mergeWays(ways: [number, number][][]): [number, number][][] {
@@ -1119,9 +1239,13 @@ function mergeWays(ways: [number, number][][]): [number, number][][] {
   return result;
 }
 
-function drawStreetHighlight(street: string, color: string, opacity: number, side: string | null): void {
-  const ways = _roadGeometry[street];
-  if (ways === undefined || ways.length === 0) return;
+function drawWaysHighlight(
+  ways: [number, number][][],
+  color: string,
+  opacity: number,
+  side: string | null,
+): void {
+  if (ways.length === 0) return;
   const L = getL();
   const merged = mergeWays(ways);
 
@@ -1169,6 +1293,12 @@ function drawStreetHighlight(street: string, color: string, opacity: number, sid
   }
 }
 
+function drawStreetHighlight(street: string, color: string, opacity: number, side: string | null): void {
+  const ways = _roadGeometry[street];
+  if (ways === undefined || ways.length === 0) return;
+  drawWaysHighlight(ways, color, opacity, side);
+}
+
 export function clearViolationHighlights(): void {
   for (const layer of _violationLayers) {
     layer.remove();
@@ -1178,50 +1308,41 @@ export function clearViolationHighlights(): void {
 
 export function renderViolationHighlights(
   cleaningEntries: StreetCleaningEntry[],
-  now: Date
+  now: Date,
 ): void {
   _lastCleaningEntries = cleaningEntries;
   _lastNowForHighlights = now;
   clearViolationHighlights();
   if (_map === null) return;
 
-  const streetSides = new Map<string, Map<string, "active" | "upcoming">>();
+  const blockStatus = new Map<string, "active" | "upcoming">();
 
   for (const entry of cleaningEntries) {
     const street = normalizeToGeometryKey(entry.street);
-    let sides = streetSides.get(street);
-    if (sides === undefined) {
-      sides = new Map();
-      streetSides.set(street, sides);
-    }
+    const key = `${street}|||${entry.side}|||${entry.location}`;
     if (isScheduleActiveNow(entry.schedule, now)) {
-      sides.set(entry.side, "active");
+      blockStatus.set(key, "active");
     } else if (isScheduleUpcomingSoon(entry.schedule, now)) {
-      if (sides.get(entry.side) !== "active") {
-        sides.set(entry.side, "upcoming");
+      if (blockStatus.get(key) !== "active") {
+        blockStatus.set(key, "upcoming");
       }
     }
   }
 
-  for (const [street, sides] of streetSides) {
-    const sideEntries = [...sides.entries()];
-    const hasActive   = sideEntries.some(([, s]) => s === "active");
-    const hasUpcoming = sideEntries.some(([, s]) => s === "upcoming");
-    const allSpecific = sideEntries.every(([sd]) => sd !== "Both");
+  for (const [key, status] of blockStatus) {
+    const [street = "", side = "Both", location = ""] = key.split("|||");
+    const allWays = _roadGeometry[street];
+    if (allWays === undefined || allWays.length === 0) continue;
 
-    if (!hasActive && !hasUpcoming) continue;
+    const bounds = parseLocationBounds(location, street);
+    const ways = bounds !== null
+      ? clipWaysToBounds(allWays, bounds.min, bounds.max, bounds.axis)
+      : allWays;
+    if (ways.length === 0) continue;
 
-    if (allSpecific && sideEntries.length > 0) {
-      for (const [sd, status] of sideEntries) {
-        const color   = status === "active" ? "#ef4444" : "#f97316";
-        const opacity = status === "active" ? 0.28 : 0.22;
-        drawStreetHighlight(street, color, opacity, sd);
-      }
-    } else {
-      const color   = hasActive ? "#ef4444" : "#f97316";
-      const opacity = hasActive ? 0.28 : 0.22;
-      drawStreetHighlight(street, color, opacity, null);
-    }
+    const color   = status === "active" ? "#ef4444" : "#f97316";
+    const opacity = status === "active" ? 0.58 : 0.48;
+    drawWaysHighlight(ways, color, opacity, side !== "Both" ? side : null);
   }
 }
 

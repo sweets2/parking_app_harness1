@@ -68,7 +68,7 @@ import {
 // Washington St East=active + West=upcoming: any weekday 8:00–8:59 am ET
 // To enable: set DEV_FORCE_NOW = new Date("2026-06-09T12:30:00Z")
 // To disable: set DEV_FORCE_NOW = null
-const DEV_FORCE_NOW: Date | null = new Date("2026-06-09T12:30:00Z");
+const DEV_FORCE_NOW: Date | null = null;
 const DEV_TEST_STREET = "Washington St.";
 function devNow(): Date { return DEV_FORCE_NOW ?? new Date(); }
 function devEntries(entries: StreetCleaningEntry[]): StreetCleaningEntry[] {
