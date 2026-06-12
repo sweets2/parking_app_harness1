@@ -7,6 +7,7 @@ import {
   checkCountDrop,
   runFetcher,
   runFetcherWithFs,
+  runFutureFetcherWithFs,
 } from "../../fetcher/fetch";
 
 // ---------------------------------------------------------------------------
@@ -363,6 +364,172 @@ describe("runFetcher — output file format", () => {
       expect(sign).toHaveProperty("start_time");
       expect(sign).toHaveProperty("stop_date");
       expect(sign).toHaveProperty("end_time");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F-35 — runFutureFetcherWithFs
+// ---------------------------------------------------------------------------
+
+describe("runFutureFetcherWithFs", () => {
+  function makeRawSign(overrides: Record<string, unknown> = {}) {
+    return {
+      id: "1",
+      address: "123 Main St",
+      reason: "CONSTRUCTION",
+      permit_number: "999",
+      latitude: 40.75,
+      longitude: -74.03,
+      start_date: "1/1/2020",
+      start_time: "08:00:00",
+      stop_date: "12/31/2030",
+      end_time: "17:00:00",
+      ...overrides,
+    };
+  }
+
+  function makeMockFs() {
+    const writes: Array<[string, string]> = [];
+    return {
+      readFile: async (_p: string): Promise<string> => {
+        throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+      },
+      writeFile: async (p: string, data: string): Promise<void> => {
+        writes.push([p, data]);
+      },
+      writes,
+    };
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("GIVEN future API returns 3 signs (1 with start_iso <= fetchTime, 2 upcoming) WHEN runFutureFetcherWithFs runs THEN future.json contains 2 signs", async () => {
+    // fetchTime is 2026-06-09T13:00:00Z → fetchLocalIso = "2026-06-09T13:00:00"
+    const fetchTime = new Date("2026-06-09T13:00:00Z");
+    // Sign 1: starts before fetchTime (not upcoming)
+    const pastSign = makeRawSign({ id: "1", start_date: "6/9/2026", start_time: "08:00:00", stop_date: "6/9/2026", end_time: "23:59:00" });
+    // Sign 2: starts after fetchTime (upcoming)
+    const upcoming1 = makeRawSign({ id: "2", start_date: "6/9/2026", start_time: "14:00:00", stop_date: "6/9/2026", end_time: "23:59:00" });
+    // Sign 3: starts after fetchTime (upcoming)
+    const upcoming2 = makeRawSign({ id: "3", start_date: "6/10/2026", start_time: "08:00:00", stop_date: "6/10/2026", end_time: "17:00:00" });
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: "success", data: [pastSign, upcoming1, upcoming2] }),
+    } as unknown as Response);
+
+    const mockFs = makeMockFs();
+    await runFutureFetcherWithFs(fetchTime, mockFs);
+
+    const futureCall = mockFs.writes.find(([p]) => p.endsWith("future.json"));
+    expect(futureCall).toBeDefined();
+    if (futureCall) {
+      const written = JSON.parse(futureCall[1]) as { count: number; signs: unknown[] };
+      expect(written.count).toBe(2);
+      expect(written.signs).toHaveLength(2);
+    }
+  });
+
+  it("GIVEN future API returns 0 upcoming signs WHEN runFutureFetcherWithFs runs THEN future.json written with empty array and process.exit NOT called", async () => {
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((_code) => {
+      throw new Error("process.exit called");
+    });
+
+    // All signs are in the past (start_iso <= fetchLocalIso)
+    const pastSign = makeRawSign({ id: "1", start_date: "6/9/2026", start_time: "08:00:00", stop_date: "6/9/2026", end_time: "12:00:00" });
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: "success", data: [pastSign] }),
+    } as unknown as Response);
+
+    const mockFs = makeMockFs();
+    await runFutureFetcherWithFs(new Date("2026-06-09T13:00:00Z"), mockFs);
+
+    exitSpy.mockRestore();
+
+    const futureCall = mockFs.writes.find(([p]) => p.endsWith("future.json"));
+    expect(futureCall).toBeDefined();
+    if (futureCall) {
+      const written = JSON.parse(futureCall[1]) as { count: number; signs: unknown[] };
+      expect(written.signs).toHaveLength(0);
+    }
+  });
+
+  it("GIVEN a full runFetcherWithFs run THEN both latest.json and future.json are written", async () => {
+    const rawSign = makeRawSign({ id: "1", start_date: "1/1/2020", start_time: "08:00:00", stop_date: "12/31/2030", end_time: "17:00:00" });
+    // Mock both calls: main API and future API
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: true, status: 200,
+        json: async () => ({ status: "success", data: [rawSign] }),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: true, status: 200,
+        json: async () => ({ status: "success", data: [rawSign] }),
+      } as unknown as Response);
+
+    const mockFs = makeMockFs();
+    await runFetcherWithFs(new Date("2026-06-09T13:00:00Z"), mockFs);
+
+    const latestCall = mockFs.writes.find(([p]) => p.endsWith("latest.json"));
+    const futureCall = mockFs.writes.find(([p]) => p.endsWith("future.json"));
+    expect(latestCall).toBeDefined();
+    expect(futureCall).toBeDefined();
+  });
+
+  it("GIVEN future API returns HTTP 500 THEN process.exit(1) called", async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 500,
+    } as unknown as Response);
+
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((_code) => {
+      throw new Error("process.exit called");
+    });
+
+    const mockFs = makeMockFs();
+    await expect(runFutureFetcherWithFs(new Date("2026-06-09T13:00:00Z"), mockFs)).rejects.toThrow(
+      "process.exit called"
+    );
+    exitSpy.mockRestore();
+  });
+
+  it("GIVEN a successful future fetch THEN future.json has fetched_at, count, and signs[] each with start_iso, end_iso, lat, lng", async () => {
+    const upcoming = makeRawSign({ id: "2", start_date: "6/10/2026", start_time: "08:00:00", stop_date: "6/10/2026", end_time: "17:00:00" });
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: "success", data: [upcoming] }),
+    } as unknown as Response);
+
+    const mockFs = makeMockFs();
+    await runFutureFetcherWithFs(new Date("2026-06-09T13:00:00Z"), mockFs);
+
+    const futureCall = mockFs.writes.find(([p]) => p.endsWith("future.json"));
+    expect(futureCall).toBeDefined();
+    if (futureCall) {
+      const written = JSON.parse(futureCall[1]) as { fetched_at: string; count: number; signs: Record<string, unknown>[] };
+      expect(written).toHaveProperty("fetched_at");
+      expect(written).toHaveProperty("count");
+      expect(written).toHaveProperty("signs");
+      expect(Array.isArray(written.signs)).toBe(true);
+      if (written.signs.length > 0) {
+        const sign = written.signs[0];
+        expect(sign).toHaveProperty("start_iso");
+        expect(sign).toHaveProperty("end_iso");
+        expect(sign).toHaveProperty("lat");
+        expect(sign).toHaveProperty("lng");
+      }
     }
   });
 });

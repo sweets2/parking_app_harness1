@@ -82,6 +82,7 @@ interface MockMap {
   _clickHandler: ((e: { latlng: LatLng }) => void) | null;
   _zoomendHandler: ((e: unknown) => void) | null;
   _openPopups: MockPopup[];
+  _panes: Record<string, HTMLElement>;
   setView: (center: [number, number], zoom: number) => MockMap;
   panTo: (center: [number, number] | LatLng) => MockMap;
   getCenter: () => LatLng;
@@ -91,6 +92,8 @@ interface MockMap {
   addLayer: (layer: MockMarker) => MockMap;
   removeLayer: (layer: MockMarker) => MockMap;
   closePopup: () => MockMap;
+  createPane: (name: string) => HTMLElement;
+  getPane: (name: string) => HTMLElement | undefined;
   _fireClick: (lat: number, lng: number) => void;
   _fireZoomend: () => void;
 }
@@ -103,6 +106,7 @@ function createMockMap(): MockMap {
     _clickHandler: null,
     _zoomendHandler: null,
     _openPopups: [],
+    _panes: {},
     setView(center, zoom) {
       map._center = { lat: center[0], lng: center[1] };
       map._zoom = zoom;
@@ -151,6 +155,14 @@ function createMockMap(): MockMap {
     },
     closePopup() {
       return map;
+    },
+    createPane(name: string) {
+      const el = { style: { zIndex: '' } } as unknown as HTMLElement;
+      map._panes[name] = el;
+      return el;
+    },
+    getPane(name: string) {
+      return map._panes[name];
     },
     _fireZoomend() {
       if (map._zoomendHandler) {
@@ -259,7 +271,8 @@ function installLeafletMock(): void {
     }),
     marker: vi.fn((latlng: [number, number], opts: Record<string, unknown> = {}) => {
       const icon = opts["icon"] as { _html: string } | undefined;
-      return createMockMarker(latlng[0], latlng[1], { html: icon?._html ?? "" });
+      const pane = opts["pane"] as string | undefined;
+      return createMockMarker(latlng[0], latlng[1], { html: icon?._html ?? "", pane: pane ?? "" });
     }),
     popup: vi.fn(() => {
       return createMockPopup();
@@ -1385,5 +1398,191 @@ describe("F-34 violation highlights", () => {
       (l) => (l as unknown as { _options: Record<string, unknown> })._options["_isPolyline"] === true
     );
     expect(polylineLayers.length).toBe(0);
+  });
+});
+
+// ─── F-35 upcoming sign rendering ────────────────────────────────────────────
+
+describe("F-35 upcoming sign rendering", () => {
+  beforeEach(() => {
+    installLeafletMock();
+    vi.resetModules();
+  });
+
+  it("GIVEN 2 upcoming signs WHEN renderUpcomingSignPins is called THEN 2 markers are added to map", async () => {
+    const { initMap, renderUpcomingSignPins } = await import("../../app/map");
+    initMap();
+    const signs = [
+      makeSign({ id: "u1", start_iso: "2026-06-10T08:00:00", end_iso: "2026-06-10T17:00:00" }),
+      makeSign({ id: "u2", start_iso: "2026-06-11T08:00:00", end_iso: "2026-06-11T17:00:00" }),
+    ];
+    renderUpcomingSignPins(signs, NOW_STABLE);
+    const markers = mockMapInstance._layers.filter(
+      (l) => l._options["pane"] === "upcomingPane"
+    );
+    expect(markers.length).toBe(2);
+  });
+
+  it("GIVEN 1 upcoming sign rendered THEN marker HTML contains #f97316 (not #cc0000)", async () => {
+    const { initMap, renderUpcomingSignPins } = await import("../../app/map");
+    initMap();
+    const sign = makeSign({ id: "u1", start_iso: "2026-06-10T08:00:00", end_iso: "2026-06-10T17:00:00" });
+    renderUpcomingSignPins([sign], NOW_STABLE);
+    const marker = mockMapInstance._layers.find((l) => l._options["pane"] === "upcomingPane");
+    expect(marker).toBeDefined();
+    expect(marker?._options["html"]).toContain("#f97316");
+    expect(marker?._options["html"]).not.toContain("#cc0000");
+  });
+
+  it("GIVEN 1 upcoming sign WHEN renderUpcomingSignPins is called THEN L.marker called with { pane: 'upcomingPane' } option", async () => {
+    const { initMap, renderUpcomingSignPins } = await import("../../app/map");
+    initMap();
+    const sign = makeSign({ id: "u1", start_iso: "2026-06-10T08:00:00", end_iso: "2026-06-10T17:00:00" });
+    renderUpcomingSignPins([sign], NOW_STABLE);
+    const L = (globalThis as Record<string, unknown>)["L"] as { marker: ReturnType<typeof vi.fn> };
+    const calls = L.marker.mock.calls as [unknown, Record<string, unknown>][];
+    const upcomingCall = calls.find(([, opts]) => opts["pane"] === "upcomingPane");
+    expect(upcomingCall).toBeDefined();
+  });
+
+  it("GIVEN 1 upcoming sign WHEN renderUpcomingTowSegments is called THEN L.polyline called twice; second call options have color: '#f97316'", async () => {
+    const { initMap, renderUpcomingTowSegments } = await import("../../app/map");
+    initMap();
+    const sign = makeSign({ id: "u1", start_iso: "2026-06-10T08:00:00", end_iso: "2026-06-10T17:00:00" });
+    renderUpcomingTowSegments([sign]);
+    const L = (globalThis as Record<string, unknown>)["L"] as { polyline: ReturnType<typeof vi.fn> };
+    expect(L.polyline.mock.calls.length).toBe(2);
+    const innerArgs = L.polyline.mock.calls[1] as [[number, number][], Record<string, unknown>];
+    expect(innerArgs[1]["color"]).toBe("#f97316");
+  });
+
+  it("GIVEN renderUpcomingSignPins called twice THEN only the second batch of markers remains", async () => {
+    const { initMap, renderUpcomingSignPins } = await import("../../app/map");
+    initMap();
+    const batch1 = [
+      makeSign({ id: "u1", lat: 40.744, lng: -74.032 }),
+      makeSign({ id: "u2", lat: 40.745, lng: -74.032 }),
+    ];
+    const batch2 = [
+      makeSign({ id: "u3", lat: 40.746, lng: -74.032 }),
+    ];
+    renderUpcomingSignPins(batch1, NOW_STABLE);
+    expect(mockMapInstance._layers.filter((l) => l._options["pane"] === "upcomingPane").length).toBe(2);
+    renderUpcomingSignPins(batch2, NOW_STABLE);
+    expect(mockMapInstance._layers.filter((l) => l._options["pane"] === "upcomingPane").length).toBe(1);
+  });
+
+  it("GIVEN setUpcomingSignsVisible(false) called before render WHEN renderUpcomingSignPins runs THEN no markers added to map", async () => {
+    const { initMap, renderUpcomingSignPins, setUpcomingSignsVisible } = await import("../../app/map");
+    initMap();
+    setUpcomingSignsVisible(false);
+    const sign = makeSign({ id: "u1" });
+    renderUpcomingSignPins([sign], NOW_STABLE);
+    const upcomingMarkers = mockMapInstance._layers.filter((l) => l._options["pane"] === "upcomingPane");
+    expect(upcomingMarkers.length).toBe(0);
+  });
+
+  it("GIVEN upcoming signs rendered WHEN setUpcomingSignsVisible(false) is called THEN all upcoming markers and segments are removed from map", async () => {
+    const { initMap, renderUpcomingSignPins, renderUpcomingTowSegments, setUpcomingSignsVisible } = await import("../../app/map");
+    initMap();
+    const sign = makeSign({ id: "u1" });
+    renderUpcomingSignPins([sign], NOW_STABLE);
+    renderUpcomingTowSegments([sign]);
+    const before = mockMapInstance._layers.length;
+    expect(before).toBeGreaterThan(0);
+    setUpcomingSignsVisible(false);
+    expect(mockMapInstance._layers.length).toBe(0);
+  });
+
+  it("GIVEN upcoming signs hidden WHEN setUpcomingSignsVisible(true) is called THEN all upcoming markers and segments are added back to map", async () => {
+    const { initMap, renderUpcomingSignPins, renderUpcomingTowSegments, setUpcomingSignsVisible } = await import("../../app/map");
+    initMap();
+    const sign = makeSign({ id: "u1" });
+    renderUpcomingSignPins([sign], NOW_STABLE);
+    renderUpcomingTowSegments([sign]);
+    const countBefore = mockMapInstance._layers.length;
+    setUpcomingSignsVisible(false);
+    expect(mockMapInstance._layers.length).toBe(0);
+    setUpcomingSignsVisible(true);
+    expect(mockMapInstance._layers.length).toBe(countBefore);
+  });
+
+  it("GIVEN both active and upcoming signs rendered THEN active markers do not contain #f97316, upcoming markers contain #f97316", async () => {
+    const { initMap, renderSignPins, renderUpcomingSignPins } = await import("../../app/map");
+    initMap();
+    const activeSign = makeSign({ id: "a1", start_iso: "2026-06-09T08:00:00", end_iso: "2026-06-09T20:00:00", active_at_fetch: true });
+    const upcomingSign = makeSign({ id: "u1", start_iso: "2026-06-10T08:00:00", end_iso: "2026-06-10T17:00:00" });
+    renderSignPins([activeSign], NOW_STABLE);
+    renderUpcomingSignPins([upcomingSign], NOW_STABLE);
+    // Active markers: added by renderSignPins, no pane option
+    const activeMarkers = mockMapInstance._layers.filter(
+      (l) => l._options["pane"] !== "upcomingPane" && typeof l._options["html"] === "string"
+    );
+    const upcomingMarkers = mockMapInstance._layers.filter(
+      (l) => l._options["pane"] === "upcomingPane"
+    );
+    expect(activeMarkers.length).toBeGreaterThan(0);
+    expect(upcomingMarkers.length).toBeGreaterThan(0);
+    // Active markers should not use orange (they use a different red SVG)
+    for (const m of activeMarkers) {
+      expect(m._options["html"]).not.toContain("#f97316");
+    }
+    // Upcoming markers must use orange
+    for (const m of upcomingMarkers) {
+      expect(m._options["html"]).toContain("#f97316");
+    }
+  });
+
+  it("GIVEN renderUpcomingTowSegments([]) is called THEN no error thrown and no polylines added", async () => {
+    const { initMap, renderUpcomingTowSegments } = await import("../../app/map");
+    initMap();
+    expect(() => renderUpcomingTowSegments([])).not.toThrow();
+    const polylines = mockMapInstance._layers.filter(
+      (l) => l._options["_isPolyline"] === true
+    );
+    expect(polylines.length).toBe(0);
+  });
+
+  describe("pin snapping to road geometry", () => {
+    it("GIVEN road geometry exists for a sign's street WHEN renderSignPins is called THEN pin is placed at road-geometry midpoint, not raw API coords", async () => {
+      const { initMap, renderSignPins, initRoadGeometry } = await import("../../app/map");
+      initMap();
+      initRoadGeometry({
+        "GARDEN ST": [[[40.7390, -74.0320], [40.7395, -74.0320], [40.7400, -74.0320]]],
+      });
+      // Raw API coords are off by a block (on Willow Ave)
+      const sign = makeSign({ address: "400-424 GARDEN ST", lat: 40.7395, lng: -74.0334 });
+      renderSignPins([sign], NOW_STABLE);
+      const marker = mockMapInstance._layers[0];
+      expect(marker).toBeDefined();
+      // Pin must be on GARDEN ST (~-74.0320), not at the raw API lng (~-74.0334)
+      expect(Math.abs(marker._lng - (-74.0320))).toBeLessThan(0.0005);
+    });
+
+    it("GIVEN no road geometry for a sign's street WHEN renderSignPins is called THEN pin falls back to raw API coords", async () => {
+      const { initMap, renderSignPins, initRoadGeometry } = await import("../../app/map");
+      initMap();
+      initRoadGeometry({});
+      const sign = makeSign({ address: "500-520 UNKNOWN ST", lat: 40.750, lng: -74.035 });
+      renderSignPins([sign], NOW_STABLE);
+      const marker = mockMapInstance._layers[0];
+      expect(marker).toBeDefined();
+      expect(marker._lat).toBeCloseTo(40.750, 5);
+      expect(marker._lng).toBeCloseTo(-74.035, 5);
+    });
+
+    it("GIVEN road geometry exists for a sign's street WHEN renderUpcomingSignPins is called THEN pin is placed at road-geometry midpoint", async () => {
+      const { initMap, renderUpcomingSignPins, initRoadGeometry, setUpcomingSignsVisible } = await import("../../app/map");
+      initMap();
+      initRoadGeometry({
+        "CLINTON ST": [[[40.7540, -74.0310], [40.7545, -74.0310], [40.7550, -74.0310]]],
+      });
+      const sign = makeSign({ address: "1500-1540 CLINTON ST", lat: 40.7545, lng: -74.0330 });
+      setUpcomingSignsVisible(true);
+      renderUpcomingSignPins([sign], NOW_STABLE);
+      const marker = mockMapInstance._layers[0];
+      expect(marker).toBeDefined();
+      expect(Math.abs(marker._lng - (-74.0310))).toBeLessThan(0.0005);
+    });
   });
 });

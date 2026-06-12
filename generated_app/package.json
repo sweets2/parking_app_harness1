@@ -10,7 +10,7 @@
     "build-road-geometry":     "tsx fetcher/build-road-geometry.ts",
     "test":                    "vitest run",
     "typecheck":               "tsc --noEmit",
-    "build":                   "esbuild app/main.ts --bundle --outfile=app/app.js && esbuild app/sw.ts --bundle --outfile=app/sw.js --platform=browser && mkdir -p app/data && cp data/latest.json app/data/latest.json && cp data/street-cleaning.json app/data/street-cleaning.json && (cp data/cross-streets.json app/data/cross-streets.json 2>/dev/null || true) && (cp data/road-geometry.json app/data/road-geometry.json 2>/dev/null || true)",
+    "build":                   "esbuild app/main.ts --bundle --outfile=app/app.js && esbuild app/sw.ts --bundle --outfile=app/sw.js --platform=browser && mkdir -p app/data && cp data/latest.json app/data/latest.json && cp data/street-cleaning.json app/data/street-cleaning.json && (cp data/cross-streets.json app/data/cross-streets.json 2>/dev/null || true) && (cp data/road-geometry.json app/data/road-geometry.json 2>/dev/null || true) && (cp data/future.json app/data/future.json 2>/dev/null || true)",
     "dev":                     "esbuild app/main.ts --bundle --outfile=app/app.js --watch"
   },
   "dependencies": {

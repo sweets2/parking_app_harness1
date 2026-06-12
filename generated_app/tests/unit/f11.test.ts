@@ -52,6 +52,9 @@ vi.mock("../../app/map", () => ({
   clearViolationHighlights:  vi.fn(),
   renderViolationHighlights: vi.fn(),
   setViolationHighlightsVisible: vi.fn(),
+  renderUpcomingSignPins:    vi.fn(),
+  renderUpcomingTowSegments: vi.fn(),
+  setUpcomingSignsVisible:   vi.fn(),
 }));
 
 // ─── Mock app/ui ──────────────────────────────────────────────────────────────

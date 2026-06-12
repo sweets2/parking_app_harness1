@@ -28,6 +28,9 @@ import {
   clearViolationHighlights,
   renderViolationHighlights,
   setViolationHighlightsVisible,
+  renderUpcomingSignPins,
+  renderUpcomingTowSegments,
+  setUpcomingSignsVisible,
 } from "./map";
 import { getStreetName, geocodeCrossStreet, seedGeocodeCache } from "./geo";
 import { createApp } from "./app";
@@ -38,6 +41,7 @@ import {
   filterNearby,
   extractCrossStreets,
   detectMatchingSegment,
+  isSignActive,
 } from "../shared/parking-logic";
 import { createSpotStorage } from "../shared/storage";
 import type { SavedSpot } from "../shared/storage";
@@ -53,6 +57,7 @@ import {
 // ─── Module state ─────────────────────────────────────────────────────────────
 
 let cleaningEntries: StreetCleaningEntry[] = [];
+let upcomingSignsData: Sign[] = [];
 let appMode: "browsing" | "parked" = "browsing";
 
 /** ISO string of when sign data was last successfully fetched — used for staleness detection. */
@@ -190,6 +195,8 @@ function renderState(state: AppState): void {
     renderSignPins(state.activeSigns, now);
     renderTowSegments(state.activeSigns);
     renderViolationHighlights(cleaningEntries, now);
+    renderUpcomingSignPins(upcomingSignsData, now);
+    renderUpcomingTowSegments(upcomingSignsData);
     return;
   }
 
@@ -221,6 +228,8 @@ function renderState(state: AppState): void {
     renderSignPins(filterActive(state.allSigns, now), now);
     renderTowSegments(filterActive(state.allSigns, now));
     renderViolationHighlights(cleaningEntries, now);
+    renderUpcomingSignPins(upcomingSignsData, now);
+    renderUpcomingTowSegments(upcomingSignsData);
     renderSpotMarker(state.spot);
     clearPositionMarker();
     return;
@@ -253,6 +262,17 @@ async function silentRefresh(app: App, now: Date): Promise<void> {
       renderViolationHighlights(cleaningEntries, now);
       renderBrowsingMode(activeNow, now);
     }
+    // Refresh upcoming signs
+    try {
+      const futureRes = await fetch("data/future.json", { cache: "no-cache" });
+      const futureJson = await futureRes.json() as { fetched_at: string; signs: Sign[] };
+      upcomingSignsData = filterLoadTimeNoise(futureJson.signs, new Date(futureJson.fetched_at))
+        .filter((s) => !isSignActive(s, now));
+    } catch {
+      // Silent — upcoming data stays as-is
+    }
+    renderUpcomingSignPins(upcomingSignsData, now);
+    renderUpcomingTowSegments(upcomingSignsData);
     app.tick(now);
   } catch {
     // Silent — cached data remains in use
@@ -324,6 +344,17 @@ export async function initBrowserApp(): Promise<void> {
     return;
   }
 
+  // Fetch upcoming signs (fire-and-forget, non-fatal)
+  try {
+    const futureRes = await fetch("data/future.json");
+    const futureJson = await futureRes.json() as { fetched_at: string; signs: Sign[] };
+    const now = new Date();
+    upcomingSignsData = filterLoadTimeNoise(futureJson.signs, new Date(futureJson.fetched_at))
+      .filter((s) => !isSignActive(s, now));
+  } catch {
+    // file missing or network error — layer stays empty
+  }
+
   // Create storage backed by localStorage
   const storage = createSpotStorage(localStorage);
 
@@ -390,6 +421,20 @@ export async function initBrowserApp(): Promise<void> {
       }
     });
   }
+
+  // Wire upcoming signs legend toggle
+  const upcomingToggle = document.getElementById("upcoming-toggle");
+  upcomingToggle?.addEventListener("click", () => {
+    const isOn = upcomingToggle.getAttribute("aria-pressed") === "true";
+    const next = !isOn;
+    setUpcomingSignsVisible(next);
+    upcomingToggle.setAttribute("aria-pressed", String(next));
+    document.getElementById("upcoming-legend")?.classList.toggle("upcoming-off", !next);
+    const status = document.getElementById("upcoming-legend")?.querySelector(".upcoming-status");
+    if (status !== null && status !== undefined) {
+      status.textContent = next ? "Enabled" : "Hidden";
+    }
+  });
 
   // Wire "Get Current Location" button
   const locateBtn = document.getElementById("locate-btn");

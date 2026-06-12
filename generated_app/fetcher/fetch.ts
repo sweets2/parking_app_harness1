@@ -4,6 +4,7 @@ import { SIGN_REASONS } from "../shared/types";
 import type { Sign, ParkingData } from "../shared/types";
 
 const API_URL = "https://api-hpuvp.hobokennj.gov/api/v1/parking";
+const FUTURE_API_URL = "https://api-hpuvp.hobokennj.gov/api/v1/parking/future";
 
 // Resolve data directory relative to this file at runtime
 const DATA_DIR = path.resolve(
@@ -272,6 +273,74 @@ export async function runFetcherWithFs(
   console.log(
     `Wrote ${signs.length} signs to ${latestPath} and ${archivePath}`
   );
+
+  await runFutureFetcherWithFs(fetchTime, fsBackend);
+}
+
+/**
+ * Fetches upcoming (not-yet-active) parking signs from the future API endpoint.
+ * Writes data/future.json with { fetched_at, count, signs[] } containing only signs
+ * whose start_iso is after fetchTime. Zero upcoming signs is valid — writes empty array.
+ */
+export async function runFutureFetcherWithFs(
+  fetchTime: Date,
+  fsBackend: FsBackend
+): Promise<void> {
+  // Build fetchLocalIso the same way computeActiveAtFetch does
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const fetchLocalIso =
+    `${fetchTime.getUTCFullYear()}-` +
+    `${pad(fetchTime.getUTCMonth() + 1)}-` +
+    `${pad(fetchTime.getUTCDate())}T` +
+    `${pad(fetchTime.getUTCHours())}:` +
+    `${pad(fetchTime.getUTCMinutes())}:` +
+    `${pad(fetchTime.getUTCSeconds())}`;
+
+  let rawBody: unknown;
+  try {
+    const response = await fetch(FUTURE_API_URL);
+    if (!response.ok) {
+      console.error(`Fatal: Future API returned HTTP ${response.status}`);
+      process.exit(1);
+    }
+    try {
+      rawBody = await response.json();
+    } catch (parseErr) {
+      console.error(
+        `Fatal: Failed to parse future API response as JSON: ${String(parseErr)}`
+      );
+      process.exit(1);
+    }
+  } catch (networkErr) {
+    console.error(`Fatal: Network error fetching future: ${String(networkErr)}`);
+    process.exit(1);
+  }
+
+  const validated = validateResponseShape(rawBody);
+
+  // Validate individual signs (warn-and-continue)
+  for (const [i, sign] of validated.data.entries()) {
+    const warnings = validateSign(sign, i);
+    for (const w of warnings) {
+      console.warn(w);
+    }
+  }
+
+  // Transform all signs, then keep only those with start_iso > fetchLocalIso (upcoming only)
+  const allSigns: Sign[] = validated.data.map((raw) =>
+    transformSign(raw as Record<string, unknown>, fetchTime)
+  );
+  const upcomingSigns = allSigns.filter((sign) => sign.start_iso > fetchLocalIso);
+
+  const futurePath = path.join(DATA_DIR, "future.json");
+  const output: { fetched_at: string; count: number; signs: Sign[] } = {
+    fetched_at: fetchTime.toISOString(),
+    count: upcomingSigns.length,
+    signs: upcomingSigns,
+  };
+
+  await fsBackend.writeFile(futurePath, JSON.stringify(output, null, 2));
+  console.log(`Wrote ${upcomingSigns.length} upcoming signs to ${futurePath}`);
 }
 
 /** Main entry point — runs the full fetch pipeline. Calls process.exit on fatal errors. */

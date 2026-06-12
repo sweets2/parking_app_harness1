@@ -44,6 +44,8 @@ interface LeafletMap {
   on(event: string, handler: (e: unknown) => void): LeafletMap;
   off(event: string): LeafletMap;
   closePopup(): LeafletMap;
+  createPane(name: string): HTMLElement;
+  getPane(name: string): HTMLElement | undefined;
 }
 
 interface LeafletCircleMarker extends LeafletLayer {
@@ -52,6 +54,11 @@ interface LeafletCircleMarker extends LeafletLayer {
 
 interface LeafletIcon {
   _html: string;
+}
+
+interface LeafletMarkerOptions {
+  icon: LeafletIcon;
+  pane?: string;
 }
 
 interface LeafletStatic {
@@ -66,7 +73,7 @@ interface LeafletStatic {
   ): LeafletCircleMarker;
   marker(
     latlng: [number, number],
-    options: { icon: LeafletIcon }
+    options: LeafletMarkerOptions
   ): LeafletLayer;
   divIcon(options: {
     html: string;
@@ -79,6 +86,8 @@ interface LeafletStatic {
     latlngs: [number, number][],
     options: { color: string; weight: number; opacity: number }
   ): LeafletLayer;
+  createPane?(name: string): HTMLElement;
+  getPane?(name: string): HTMLElement | undefined;
 }
 
 function getL(): LeafletStatic {
@@ -98,6 +107,9 @@ let _popupHighlightToken = 0;
 let _roadGeometry: RoadGeometry = {};
 let _violationLayers: LeafletLayer[] = [];
 let _violationHighlightsVisible = true;
+let _upcomingSignLayers: LeafletLayer[] = [];
+let _upcomingSegmentLayers: LeafletLayer[] = [];
+let _upcomingSignsVisible: boolean = true;
 
 const DEFAULT_ZOOM = 15;
 
@@ -116,13 +128,25 @@ const SPOT_BASE_RADIUS = 10;
 
 // ─── F-10.3 signEmoji ─────────────────────────────────────────────────────────
 
+const KNOWN_REASONS: readonly string[] = ["CONSTRUCTION", "MOVING", "EVENT", "DELIVERY"];
+
 /**
  * Returns the tow sign marker HTML.
- * active=true  → ❗ (red, happening now)
- * active=false → ❕ (upcoming/future date)
+ * Known reasons → filled red circle with "!"
+ * Unknown reason → hollow red ring (fallback)
+ * active=false → orange tint for upcoming signs
  */
-export function signEmoji(_reason: string, active = true): string {
-  const c = active ? "#cc2200" : "#e05a00";
+export function signEmoji(reason: string, active = true): string {
+  const c = active ? "#cc0000" : "#e05a00";
+  if (!KNOWN_REASONS.includes(reason)) {
+    // Hollow ring fallback for unrecognized reasons
+    return (
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="13" height="13" class="tow-sign-emoji">` +
+      `<circle cx="10" cy="10" r="8" fill="none" stroke="#dc2626" stroke-width="2"/>` +
+      `<text x="10" y="15" text-anchor="middle" font-size="13" font-weight="900" fill="#dc2626" font-family="Arial Black,Impact,sans-serif">!</text>` +
+      `</svg>`
+    );
+  }
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="13" height="13" class="tow-sign-emoji">` +
     `<circle cx="10" cy="10" r="10" fill="${c}"/>` +
@@ -130,6 +154,15 @@ export function signEmoji(_reason: string, active = true): string {
     `</svg>`
   );
 }
+
+// ─── F-35 Upcoming sign icon ──────────────────────────────────────────────────
+
+const UPCOMING_SIGN_ICON =
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20">` +
+  `<circle cx="50" cy="50" r="43" fill="none" stroke="#f97316" stroke-width="13"/>` +
+  `<text x="50" y="70" text-anchor="middle" font-family="Arial Black,Impact,sans-serif" font-size="62" font-weight="900" fill="#1a1a1a">P</text>` +
+  `<rect x="-8" y="44" width="116" height="11" rx="5" fill="#f97316" transform="rotate(-35 50 50)"/>` +
+  `</svg>`;
 
 // ─── F-07.1 initMap ───────────────────────────────────────────────────────────
 
@@ -158,6 +191,12 @@ export function initMap(): LeafletMap {
   _roadGeometry = {};
   _violationLayers = [];
   _violationHighlightsVisible = true;
+  _upcomingSignLayers = [];
+  _upcomingSegmentLayers = [];
+  _upcomingSignsVisible = true;
+  map.createPane('upcomingPane');
+  const upcomingPaneEl = map.getPane('upcomingPane');
+  if (upcomingPaneEl !== undefined) upcomingPaneEl.style.zIndex = '550';
 
   // Scale tow icons proportionally with zoom — each level doubles map detail
   const updateIconScale = () => {
@@ -207,8 +246,9 @@ export function renderSignPins(signs: Sign[], now: Date): void {
 
   for (const sign of signs) {
     const icon = signEmoji(sign.reason);
+    const pos = getSnappedPinPosition(sign);
 
-    const marker = L.marker([sign.lat, sign.lng], {
+    const marker = L.marker(pos, {
       icon: L.divIcon({
         html: icon,
         className: "sign-emoji-marker",
@@ -718,6 +758,43 @@ export function offsetPolylinePoints(
  * Note: stale references are dropped before the _map null guard so they are
  * cleared even when called before initMap().
  */
+
+function getSnappedPinPosition(sign: Sign): [number, number] {
+  const streetName = sign.address.replace(/^\d[\d-]*\s+/, "").trim();
+  const ways = _roadGeometry[streetName];
+  if (ways === undefined || ways.length === 0) return [sign.lat, sign.lng];
+
+  const cosLat = Math.cos(sign.lat * Math.PI / 180);
+  let bestDist = Infinity;
+  let projPt: [number, number] = [sign.lat, sign.lng];
+
+  for (const way of ways) {
+    for (let si = 0; si < way.length - 1; si++) {
+      const A = way[si];
+      const B = way[si + 1];
+      if (A === undefined || B === undefined) continue;
+      const ax = (A[0] - sign.lat) * 111320;
+      const ay = (A[1] - sign.lng) * 111320 * cosLat;
+      const bx = (B[0] - sign.lat) * 111320;
+      const by = (B[1] - sign.lng) * 111320 * cosLat;
+      const abx = bx - ax;
+      const aby = by - ay;
+      const ab2 = abx * abx + aby * aby;
+      if (ab2 === 0) continue;
+      const t = Math.max(0, Math.min(1, -(ax * abx + ay * aby) / ab2));
+      const px = ax + t * abx;
+      const py = ay + t * aby;
+      const d = Math.sqrt(px * px + py * py);
+      if (d < bestDist) {
+        bestDist = d;
+        projPt = [A[0] + t * (B[0] - A[0]), A[1] + t * (B[1] - A[1])];
+      }
+    }
+  }
+
+  return projPt;
+}
+
 export function renderTowSegments(signs: Sign[]): void {
   for (const layer of _segmentLayers) {
     layer.remove();
@@ -886,6 +963,126 @@ export function setViolationHighlightsVisible(visible: boolean): void {
   _violationHighlightsVisible = visible;
   if (_map === null) return;
   for (const layer of _violationLayers) {
+    if (visible) {
+      layer.addTo(_map);
+    } else {
+      layer.remove();
+    }
+  }
+}
+
+// ─── F-35 Upcoming sign rendering ────────────────────────────────────────────
+
+/**
+ * Render upcoming (not-yet-active) tow sign pins in orange using the custom
+ * upcomingPane. Clears any previously rendered upcoming sign markers first.
+ */
+export function renderUpcomingSignPins(signs: Sign[], now: Date): void {
+  for (const layer of _upcomingSignLayers) {
+    layer.remove();
+  }
+  _upcomingSignLayers = [];
+
+  if (_map === null) return;
+  const L = getL();
+
+  for (const sign of signs) {
+    const icon = L.divIcon({
+      html: UPCOMING_SIGN_ICON,
+      className: "sign-emoji-marker",
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+    const pos = getSnappedPinPosition(sign);
+
+    const marker = L.marker(pos, {
+      icon,
+      pane: 'upcomingPane',
+    });
+
+    const popupHtml = buildSignPopup(sign, now);
+    marker.bindPopup(popupHtml);
+    marker.on("click", () => {
+      marker.openPopup();
+    });
+
+    if (_upcomingSignsVisible) {
+      marker.addTo(_map);
+    }
+    _upcomingSignLayers.push(marker);
+  }
+}
+
+/**
+ * Draw upcoming tow zone polylines in orange. Same geometry logic as
+ * renderTowSegments but uses #f97316 (orange) for the inner casing.
+ * Clears previous upcoming segment layers before rendering.
+ */
+export function renderUpcomingTowSegments(signs: Sign[]): void {
+  for (const layer of _upcomingSegmentLayers) {
+    layer.remove();
+  }
+  _upcomingSegmentLayers = [];
+
+  if (_map === null) return;
+  const L = getL();
+
+  for (const sign of signs) {
+    const addrMatch = sign.address.match(/^(\d+)-(\d+)\s+/);
+    const addrRange = addrMatch
+      ? Math.max(0, parseInt(addrMatch[2], 10) - parseInt(addrMatch[1], 10))
+      : 0;
+    const halfLengthM = Math.max(5, (addrRange / 2 + 1) * 4);
+
+    const streetName = sign.address.replace(/^\d[\d-]*\s+/, "").trim();
+
+    let waypoints: [number, number][] = [];
+
+    const ways = _roadGeometry[streetName];
+    if (ways !== undefined && ways.length > 0 && ways.some((w) => w.length > 0)) {
+      waypoints = getSubsegment(ways, sign.lat, sign.lng, halfLengthM);
+    }
+
+    if (waypoints.length < 2) {
+      const orientation = getStreetOrientation(sign.address);
+      const cosLat = Math.cos(sign.lat * Math.PI / 180);
+      const halfLat = halfLengthM / 111320;
+      const halfLng = halfLengthM / (111320 * cosLat);
+      waypoints =
+        orientation === "EW"
+          ? [[sign.lat, sign.lng - halfLng], [sign.lat, sign.lng + halfLng]]
+          : [[sign.lat - halfLat, sign.lng], [sign.lat + halfLat, sign.lng]];
+    }
+
+    waypoints = offsetPolylinePoints(waypoints, sign.lat, sign.lng, LATERAL_OFFSET_M);
+
+    const outer = L.polyline(waypoints, { color: "#fff", weight: 7, opacity: 0.65 });
+    const inner = L.polyline(waypoints, { color: "#f97316", weight: 3, opacity: 0.85 });
+    _upcomingSegmentLayers.push(outer, inner);
+    if (_upcomingSignsVisible) {
+      outer.addTo(_map);
+      inner.addTo(_map);
+    }
+  }
+}
+
+/**
+ * Show or hide all upcoming sign markers and segment polylines.
+ */
+export function setUpcomingSignsVisible(visible: boolean): void {
+  _upcomingSignsVisible = visible;
+  if (_map === null) return;
+  if (!visible) {
+    _map.closePopup();
+  }
+  for (const layer of _upcomingSignLayers) {
+    if (visible) {
+      layer.addTo(_map);
+    } else {
+      layer.remove();
+    }
+  }
+  for (const layer of _upcomingSegmentLayers) {
     if (visible) {
       layer.addTo(_map);
     } else {

@@ -305,10 +305,83 @@ html, body {
   color: #9ca3af;
 }
 
+/* ─── Upcoming tow zones legend ─── */
+#upcoming-legend {
+  position: fixed;
+  top: 168px;
+  left: 10px;
+  z-index: 1000;
+}
+
+#upcoming-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+  transition: opacity 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+#upcoming-toggle:active {
+  background: #f3f4f6;
+}
+
+.upcoming-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f97316;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1.5px rgba(249, 115, 22, 0.35);
+  flex-shrink: 0;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.upcoming-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.upcoming-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.upcoming-status {
+  font-size: 10px;
+  font-weight: 600;
+  color: #16a34a;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+/* OFF state */
+#upcoming-legend.upcoming-off #upcoming-toggle {
+  border-color: #e5e7eb;
+}
+
+#upcoming-legend.upcoming-off .upcoming-dot {
+  background: #9ca3af;
+  box-shadow: none;
+}
+
+#upcoming-legend.upcoming-off .upcoming-status {
+  color: #9ca3af;
+}
+
 /* ─── Street violation highlights legend ─── */
 #violation-legend {
   position: fixed;
-  top: 168px;
+  top: 210px;
   left: 10px;
   z-index: 1000;
 }
