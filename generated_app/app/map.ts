@@ -1454,12 +1454,15 @@ export function renderSnowEmergencyRoutes(routes: SnowRoute[], visible: boolean)
     const ways = _roadGeometry[route.street];
     if (ways === undefined || ways.length === 0) continue;
     const expectedLat = HOBOKEN_STREET_LAT[route.street];
-    for (const way of ways) {
-      if (way.length === 0) continue;
+    const filtered = ways.filter(way => {
+      if (way.length === 0) return false;
       if (expectedLat !== undefined) {
         const centLat = way.reduce((sum, pt) => sum + pt[0], 0) / way.length;
-        if (Math.abs(centLat - expectedLat) > HOBOKEN_STREET_LAT_TOLERANCE) continue;
+        if (Math.abs(centLat - expectedLat) > HOBOKEN_STREET_LAT_TOLERANCE) return false;
       }
+      return true;
+    });
+    for (const way of mergeWays(filtered)) {
       const layer = L.polyline(way, { color: "#3b82f6", weight: 12, opacity: 0.45 });
       _snowRouteLayers.push(layer);
       if (_snowRoutesVisible && _map !== null) {

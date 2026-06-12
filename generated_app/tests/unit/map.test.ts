@@ -1949,6 +1949,22 @@ describe("F-37 snow emergency routes", () => {
     setSnowRoutesVisible(true);
     expect(mockMapInstance._layers.length).toBe(1);
   });
+
+  it("GIVEN 1 route with geometry containing 2 connected ways (end of way-0 = start of way-1), WHEN renderSnowEmergencyRoutes([route], true) is called, THEN exactly 1 polyline is added (ways merged into one chain)", async () => {
+    const { initMap, initRoadGeometry, renderSnowEmergencyRoutes } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({
+      "3RD ST": [
+        [[40.744, -74.032], [40.745, -74.032]],
+        [[40.745, -74.032], [40.746, -74.032]],
+      ],
+    });
+    renderSnowEmergencyRoutes([makeSnowRoute({ street: "3RD ST" })], true);
+    const blueLayers = mockMapInstance._layers.filter(
+      (l) => (l as unknown as { _options: Record<string, unknown> })._options["color"] === "#3b82f6"
+    );
+    expect(blueLayers.length).toBe(1);
+  });
 });
 
 // ─── F-41 Address-parity curb offset ─────────────────────────────────────────
