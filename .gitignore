@@ -9,3 +9,8 @@ generated_app/dist/
 generated_app/app/data/
 generated_app/app/app.js
 generated_app/app/sw.js
+!generated_app/data/garages.json
+!generated_app/data/road-geometry.json
+!generated_app/data/street-parity.json
+!generated_app/data/cross-streets.json
+!generated_app/data/future.json

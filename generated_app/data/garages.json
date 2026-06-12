@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Garage B",
+    "address": "28 2nd St",
+    "capacity": 829,
+    "lat": 40.7385735,
+    "lng": -74.0291805,
+    "phone": "201-653-7333"
+  },
+  {
+    "name": "Garage D",
+    "address": "215 Hudson St",
+    "capacity": 488,
+    "lat": 40.7388207,
+    "lng": -74.029419,
+    "phone": "201-653-7333"
+  },
+  {
+    "name": "Garage G",
+    "address": "315 Hudson St",
+    "capacity": 488,
+    "lat": 40.7400271,
+    "lng": -74.0288145,
+    "phone": "201-653-7333"
+  },
+  {
+    "name": "Midtown Garage",
+    "address": "371 4th St",
+    "capacity": 730,
+    "lat": 40.7420478,
+    "lng": -74.0339333,
+    "phone": "201-222-3621"
+  }
+]

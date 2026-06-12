@@ -1,0 +1,670 @@
+{
+  "adams street": {
+    "lat": 40.7428648,
+    "lng": -74.0359997
+  },
+  "newark street": {
+    "lat": 40.7364605,
+    "lng": -74.0284841
+  },
+  "16th street": {
+    "lat": 40.7563637,
+    "lng": -74.0293919
+  },
+  "bloomfield street": {
+    "lat": 40.7364001,
+    "lng": -74.0320668
+  },
+  "observer highway": {
+    "lat": 40.7367155,
+    "lng": -74.0378207
+  },
+  "north boundary": {
+    "lat": 40.765,
+    "lng": -74.033
+  },
+  "castle point terrace": {
+    "lat": 40.7475043,
+    "lng": -74.0256104
+  },
+  "8th street": {
+    "lat": 40.7455222,
+    "lng": -74.0258207
+  },
+  "10th street": {
+    "lat": 40.7492863,
+    "lng": -74.0315908
+  },
+  "clinton street": {
+    "lat": 40.7450293,
+    "lng": -74.0333691
+  },
+  "17th street": {
+    "lat": 40.7529138,
+    "lng": -74.0242549
+  },
+  "willow avenue": {
+    "lat": 40.7371203,
+    "lng": -74.0348108
+  },
+  "jackson street": {
+    "lat": 40.7369325,
+    "lng": -74.041746
+  },
+  "east boundary": {
+    "lat": 40.745,
+    "lng": -74.019
+  },
+  "11th street": {
+    "lat": 40.7495479,
+    "lng": -74.0248581
+  },
+  "hudson street": {
+    "lat": 40.7515389,
+    "lng": -74.0254485
+  },
+  "monroe street": {
+    "lat": 40.7368775,
+    "lng": -74.0407577
+  },
+  "15th street": {
+    "lat": 40.7541887,
+    "lng": -74.0245545
+  },
+  "park avenue": {
+    "lat": 40.7389076,
+    "lng": -74.0332803
+  },
+  "madison street": {
+    "lat": 40.7368193,
+    "lng": -74.0396314
+  },
+  "sinatra drive": {
+    "lat": 40.7448715,
+    "lng": -74.0229283
+  },
+  "5th street": {
+    "lat": 40.7424314,
+    "lng": -74.0307157
+  },
+  "grand street": {
+    "lat": 40.7459946,
+    "lng": -74.0340693
+  },
+  "1st street": {
+    "lat": 40.7370127,
+    "lng": -74.0283189
+  },
+  "marshall street": {
+    "lat": 40.7402115,
+    "lng": -74.0427171
+  },
+  "river street": {
+    "lat": 40.7363868,
+    "lng": -74.0290444
+  },
+  "14th street": {
+    "lat": 40.7529138,
+    "lng": -74.0242549
+  },
+  "4th street": {
+    "lat": 40.7412522,
+    "lng": -74.0296019
+  },
+  "harrison street": {
+    "lat": 40.736951,
+    "lng": -74.0427172
+  },
+  "garden street": {
+    "lat": 40.7392145,
+    "lng": -74.0322066
+  },
+  "grove street": {
+    "lat": 40.7365159,
+    "lng": -74.0404452
+  },
+  "the south boundary": {
+    "lat": 40.73,
+    "lng": -74.028
+  },
+  "the northern boundary": {
+    "lat": 40.765,
+    "lng": -74.033
+  },
+  "henderson street": {
+    "lat": 40.736,
+    "lng": -74.0365
+  },
+  "south boundary": {
+    "lat": 40.73,
+    "lng": -74.028
+  },
+  "hudson place": {
+    "lat": 40.7359556,
+    "lng": -74.0296786
+  },
+  "jefferson street": {
+    "lat": 40.7414901,
+    "lng": -74.0374043
+  },
+  "2nd street": {
+    "lat": 40.7386218,
+    "lng": -74.0298851
+  },
+  "west boundary": {
+    "lat": 40.745,
+    "lng": -74.051
+  },
+  "washington street": {
+    "lat": 40.7357581,
+    "lng": -74.03141
+  },
+  "9th street": {
+    "lat": 40.746927,
+    "lng": -74.0258651
+  },
+  "paterson avenue": {
+    "lat": 40.7375952,
+    "lng": -74.0411498
+  },
+  "river terrace": {
+    "lat": 40.742476,
+    "lng": -74.0271821
+  },
+  "7th street": {
+    "lat": 40.7462054,
+    "lng": -74.0369436
+  },
+  "6th street": {
+    "lat": 40.7432038,
+    "lng": -74.0275119
+  },
+  "3rd street": {
+    "lat": 40.7414556,
+    "lng": -74.0383878
+  },
+  "13th street": {
+    "lat": 40.7522762,
+    "lng": -74.0258067
+  },
+  "12th street": {
+    "lat": 40.7507564,
+    "lng": -74.0247775
+  },
+  "vezzetti way": {
+    "lat": 40.7353986,
+    "lng": -74.0304798
+  },
+  "adams street|newark street": {
+    "lat": 40.7364605,
+    "lng": -74.0359997
+  },
+  "adams street|16th street": {
+    "lat": 40.7563637,
+    "lng": -74.0359997
+  },
+  "bloomfield street|observer highway": {
+    "lat": 40.7367155,
+    "lng": -74.0320668
+  },
+  "bloomfield street|north boundary": {
+    "lat": 40.765,
+    "lng": -74.033
+  },
+  "castle point terrace|8th street": {
+    "lat": 40.7455222,
+    "lng": -74.0256104
+  },
+  "castle point terrace|10th street": {
+    "lat": 40.7492863,
+    "lng": -74.0256104
+  },
+  "clinton street|newark street": {
+    "lat": 40.7364605,
+    "lng": -74.0333691
+  },
+  "clinton street|17th street": {
+    "lat": 40.7529138,
+    "lng": -74.0333691
+  },
+  "8th street|willow avenue": {
+    "lat": 40.7455222,
+    "lng": -74.0348108
+  },
+  "8th street|jackson street": {
+    "lat": 40.7455222,
+    "lng": -74.041746
+  },
+  "8th street|east boundary": {
+    "lat": 40.745,
+    "lng": -74.019
+  },
+  "11th street|hudson street": {
+    "lat": 40.7495479,
+    "lng": -74.0254485
+  },
+  "11th street|willow avenue": {
+    "lat": 40.7495479,
+    "lng": -74.0348108
+  },
+  "11th street|monroe street": {
+    "lat": 40.7495479,
+    "lng": -74.0407577
+  },
+  "15th street|park avenue": {
+    "lat": 40.7541887,
+    "lng": -74.0332803
+  },
+  "15th street|madison street": {
+    "lat": 40.7541887,
+    "lng": -74.0396314
+  },
+  "15th street|sinatra drive": {
+    "lat": 40.7541887,
+    "lng": -74.0229283
+  },
+  "5th street|jackson street": {
+    "lat": 40.7424314,
+    "lng": -74.041746
+  },
+  "5th street|grand street": {
+    "lat": 40.7424314,
+    "lng": -74.0340693
+  },
+  "5th street|clinton street": {
+    "lat": 40.7424314,
+    "lng": -74.0333691
+  },
+  "5th street|sinatra drive": {
+    "lat": 40.7424314,
+    "lng": -74.0229283
+  },
+  "1st street|marshall street": {
+    "lat": 40.7370127,
+    "lng": -74.0427171
+  },
+  "1st street|willow avenue": {
+    "lat": 40.7370127,
+    "lng": -74.0348108
+  },
+  "1st street|river street": {
+    "lat": 40.7370127,
+    "lng": -74.0290444
+  },
+  "14th street|willow avenue": {
+    "lat": 40.7529138,
+    "lng": -74.0348108
+  },
+  "14th street|hudson street": {
+    "lat": 40.7529138,
+    "lng": -74.0254485
+  },
+  "4th street|willow avenue": {
+    "lat": 40.7412522,
+    "lng": -74.0348108
+  },
+  "4th street|harrison street": {
+    "lat": 40.7412522,
+    "lng": -74.0427172
+  },
+  "4th street|river street": {
+    "lat": 40.7412522,
+    "lng": -74.0290444
+  },
+  "garden street|14th street": {
+    "lat": 40.7529138,
+    "lng": -74.0322066
+  },
+  "garden street|observer highway": {
+    "lat": 40.7367155,
+    "lng": -74.0322066
+  },
+  "grand street|16th street": {
+    "lat": 40.7563637,
+    "lng": -74.0340693
+  },
+  "grand street|newark street": {
+    "lat": 40.7364605,
+    "lng": -74.0340693
+  },
+  "grand street|11th street": {
+    "lat": 40.7495479,
+    "lng": -74.0340693
+  },
+  "grand street|10th street": {
+    "lat": 40.7492863,
+    "lng": -74.0340693
+  },
+  "grove street|newark street": {
+    "lat": 40.7364605,
+    "lng": -74.0404452
+  },
+  "grove street|the south boundary": {
+    "lat": 40.73,
+    "lng": -74.028
+  },
+  "harrison street|5th street": {
+    "lat": 40.7424314,
+    "lng": -74.0427172
+  },
+  "harrison street|the northern boundary": {
+    "lat": 40.765,
+    "lng": -74.033
+  },
+  "harrison street|4th street": {
+    "lat": 40.7412522,
+    "lng": -74.0427172
+  },
+  "harrison street|newark street": {
+    "lat": 40.7364605,
+    "lng": -74.0427172
+  },
+  "henderson street|newark street": {
+    "lat": 40.7364605,
+    "lng": -74.0365
+  },
+  "henderson street|south boundary": {
+    "lat": 40.73,
+    "lng": -74.028
+  },
+  "hudson place|hudson street": {
+    "lat": 40.7515389,
+    "lng": -74.0296786
+  },
+  "hudson place|east boundary": {
+    "lat": 40.745,
+    "lng": -74.019
+  },
+  "hudson street|14th street": {
+    "lat": 40.7529138,
+    "lng": -74.0254485
+  },
+  "hudson street|observer highway": {
+    "lat": 40.7367155,
+    "lng": -74.0254485
+  },
+  "hudson street|15th street": {
+    "lat": 40.7541887,
+    "lng": -74.0254485
+  },
+  "jackson street|newark street": {
+    "lat": 40.7364605,
+    "lng": -74.041746
+  },
+  "jackson street|north boundary": {
+    "lat": 40.765,
+    "lng": -74.033
+  },
+  "jefferson street|16th street": {
+    "lat": 40.7563637,
+    "lng": -74.0374043
+  },
+  "jefferson street|observer highway": {
+    "lat": 40.7367155,
+    "lng": -74.0374043
+  },
+  "madison street|newark street": {
+    "lat": 40.7364605,
+    "lng": -74.0396314
+  },
+  "madison street|15th street": {
+    "lat": 40.7541887,
+    "lng": -74.0396314
+  },
+  "marshall street|1st street": {
+    "lat": 40.7370127,
+    "lng": -74.0427171
+  },
+  "marshall street|2nd street": {
+    "lat": 40.7386218,
+    "lng": -74.0427171
+  },
+  "monroe street|11th street": {
+    "lat": 40.7495479,
+    "lng": -74.0407577
+  },
+  "monroe street|newark street": {
+    "lat": 40.7364605,
+    "lng": -74.0407577
+  },
+  "newark street|henderson street": {
+    "lat": 40.736,
+    "lng": -74.0365
+  },
+  "newark street|west boundary": {
+    "lat": 40.745,
+    "lng": -74.051
+  },
+  "newark street|washington street": {
+    "lat": 40.7364605,
+    "lng": -74.03141
+  },
+  "newark street|east boundary": {
+    "lat": 40.745,
+    "lng": -74.019
+  },
+  "newark street|willow avenue": {
+    "lat": 40.7364605,
+    "lng": -74.0348108
+  },
+  "newark street|jefferson street": {
+    "lat": 40.7364605,
+    "lng": -74.0374043
+  },
+  "newark street|north boundary": {
+    "lat": 40.765,
+    "lng": -74.033
+  },
+  "9th street|jackson street": {
+    "lat": 40.746927,
+    "lng": -74.041746
+  },
+  "9th street|willow avenue": {
+    "lat": 40.746927,
+    "lng": -74.0348108
+  },
+  "9th street|east boundary": {
+    "lat": 40.745,
+    "lng": -74.019
+  },
+  "observer highway|jefferson street": {
+    "lat": 40.7367155,
+    "lng": -74.0374043
+  },
+  "observer highway|monroe street": {
+    "lat": 40.7367155,
+    "lng": -74.0407577
+  },
+  "observer highway|hudson street": {
+    "lat": 40.7367155,
+    "lng": -74.0254485
+  },
+  "observer highway|henderson street": {
+    "lat": 40.736,
+    "lng": -74.0365
+  },
+  "park avenue|observer highway": {
+    "lat": 40.7367155,
+    "lng": -74.0332803
+  },
+  "park avenue|14th street": {
+    "lat": 40.7529138,
+    "lng": -74.0332803
+  },
+  "paterson avenue|monroe street": {
+    "lat": 40.7368775,
+    "lng": -74.0411498
+  },
+  "paterson avenue|west boundary": {
+    "lat": 40.745,
+    "lng": -74.051
+  },
+  "river street|hudson place": {
+    "lat": 40.7359556,
+    "lng": -74.0290444
+  },
+  "river street|4th street": {
+    "lat": 40.7412522,
+    "lng": -74.0290444
+  },
+  "river terrace|5th street": {
+    "lat": 40.7424314,
+    "lng": -74.0271821
+  },
+  "river terrace|7th street": {
+    "lat": 40.7462054,
+    "lng": -74.0271821
+  },
+  "2nd street|willow avenue": {
+    "lat": 40.7386218,
+    "lng": -74.0348108
+  },
+  "2nd street|marshall street": {
+    "lat": 40.7386218,
+    "lng": -74.0427171
+  },
+  "2nd street|river street": {
+    "lat": 40.7386218,
+    "lng": -74.0290444
+  },
+  "7th street|willow avenue": {
+    "lat": 40.7462054,
+    "lng": -74.0348108
+  },
+  "7th street|hudson street": {
+    "lat": 40.7462054,
+    "lng": -74.0254485
+  },
+  "7th street|jackson street": {
+    "lat": 40.7462054,
+    "lng": -74.041746
+  },
+  "sinatra drive|6th street": {
+    "lat": 40.7448715,
+    "lng": -74.0275119
+  },
+  "sinatra drive|5th street": {
+    "lat": 40.7448715,
+    "lng": -74.0307157
+  },
+  "sinatra drive|11th street": {
+    "lat": 40.7448715,
+    "lng": -74.0248581
+  },
+  "sinatra drive|1st street": {
+    "lat": 40.7448715,
+    "lng": -74.0283189
+  },
+  "sinatra drive|4th street": {
+    "lat": 40.7448715,
+    "lng": -74.0296019
+  },
+  "16th street|west boundary": {
+    "lat": 40.745,
+    "lng": -74.051
+  },
+  "16th street|park avenue": {
+    "lat": 40.7563637,
+    "lng": -74.0332803
+  },
+  "6th street|willow avenue": {
+    "lat": 40.7432038,
+    "lng": -74.0348108
+  },
+  "6th street|west boundary": {
+    "lat": 40.745,
+    "lng": -74.051
+  },
+  "6th street|east boundary": {
+    "lat": 40.745,
+    "lng": -74.019
+  },
+  "10th street|hudson street": {
+    "lat": 40.7492863,
+    "lng": -74.0254485
+  },
+  "10th street|madison street": {
+    "lat": 40.7492863,
+    "lng": -74.0396314
+  },
+  "10th street|clinton street": {
+    "lat": 40.7492863,
+    "lng": -74.0333691
+  },
+  "10th street|grand street": {
+    "lat": 40.7492863,
+    "lng": -74.0340693
+  },
+  "3rd street|jackson street": {
+    "lat": 40.7414556,
+    "lng": -74.041746
+  },
+  "3rd street|willow avenue": {
+    "lat": 40.7414556,
+    "lng": -74.0348108
+  },
+  "3rd street|river street": {
+    "lat": 40.7414556,
+    "lng": -74.0290444
+  },
+  "13th street|hudson street": {
+    "lat": 40.7522762,
+    "lng": -74.0254485
+  },
+  "13th street|willow avenue": {
+    "lat": 40.7522762,
+    "lng": -74.0348108
+  },
+  "13th street|madison street": {
+    "lat": 40.7522762,
+    "lng": -74.0396314
+  },
+  "12th street|willow avenue": {
+    "lat": 40.7507564,
+    "lng": -74.0348108
+  },
+  "12th street|hudson street": {
+    "lat": 40.7507564,
+    "lng": -74.0254485
+  },
+  "12th street|west boundary": {
+    "lat": 40.745,
+    "lng": -74.051
+  },
+  "vezzetti way|henderson street": {
+    "lat": 40.736,
+    "lng": -74.0365
+  },
+  "vezzetti way|washington street": {
+    "lat": 40.7357581,
+    "lng": -74.0304798
+  },
+  "washington street|observer highway": {
+    "lat": 40.7367155,
+    "lng": -74.03141
+  },
+  "washington street|7th street": {
+    "lat": 40.7462054,
+    "lng": -74.03141
+  },
+  "washington street|8th street": {
+    "lat": 40.7455222,
+    "lng": -74.03141
+  },
+  "washington street|15th street": {
+    "lat": 40.7541887,
+    "lng": -74.03141
+  },
+  "willow avenue|14th street": {
+    "lat": 40.7529138,
+    "lng": -74.0348108
+  },
+  "willow avenue|observer highway": {
+    "lat": 40.7367155,
+    "lng": -74.0348108
+  },
+  "willow avenue|north boundary": {
+    "lat": 40.765,
+    "lng": -74.033
+  }
+}

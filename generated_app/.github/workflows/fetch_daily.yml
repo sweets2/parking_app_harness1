@@ -44,7 +44,7 @@ jobs:
         id: diff
         working-directory: generated_app
         run: |
-          git diff --quiet data/latest.json || echo "changed=true" >> "$GITHUB_OUTPUT"
+          (git diff --quiet data/latest.json && git diff --quiet data/future.json) || echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Commit and push updated data
         if: steps.diff.outputs.changed == 'true'
@@ -52,6 +52,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/latest.json
-          git commit -m "data: update latest.json [skip ci]"
+          git add data/latest.json data/future.json
+          git commit -m "data: update latest.json and future.json [skip ci]"
           git push
