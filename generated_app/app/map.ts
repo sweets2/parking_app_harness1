@@ -8,7 +8,7 @@
  * In Node tests the global `L` is mocked before this module is imported.
  */
 
-import type { Sign, StreetCleaningEntry, RoadGeometry, Garage, SnowRoute, BusStop } from "../shared/types";
+import type { Sign, StreetCleaningEntry, RoadGeometry, Garage, SnowRoute } from "../shared/types";
 import type { SavedSpot } from "../shared/storage";
 import { formatTime, getStreetOrientation, isScheduleActiveNow, isScheduleUpcomingSoon, isSignActive } from "../shared/parking-logic";
 import { track } from "./analytics";
@@ -115,9 +115,6 @@ let _garageLayers: LeafletLayer[] = [];
 let _garageMarkersVisible: boolean = true;
 let _snowRouteLayers: LeafletLayer[] = [];
 let _snowRoutesVisible: boolean = true;
-let _busStopLayers: LeafletLayer[] = [];
-let _busStopsVisible: boolean = false;
-
 const DEFAULT_ZOOM = 15;
 
 function dotScale(): number {
@@ -205,8 +202,9 @@ export function initMap(): LeafletMap {
   _garageMarkersVisible = true;
   _snowRouteLayers = [];
   _snowRoutesVisible = true;
-  _busStopLayers = [];
-  _busStopsVisible = false;
+  map.createPane('towSignPane');
+  const towSignPaneEl = map.getPane('towSignPane');
+  if (towSignPaneEl !== undefined) towSignPaneEl.style.zIndex = '600';
   map.createPane('upcomingPane');
   const upcomingPaneEl = map.getPane('upcomingPane');
   if (upcomingPaneEl !== undefined) upcomingPaneEl.style.zIndex = '550';
@@ -275,6 +273,7 @@ export function renderSignPins(signs: Sign[], now: Date): void {
         iconSize: [13, 13],
         iconAnchor: [6, 6],
       }),
+      pane: 'towSignPane',
     });
 
     const popupHtml = buildSignPopup(sign, now);
@@ -842,18 +841,7 @@ export function renderTowSegments(signs: Sign[]): void {
       waypoints = getSubsegment(ways, sign.lat, sign.lng, halfLengthM);
     }
 
-    // Use orientation heuristic when no OSM geometry exists or getSubsegment
-    // returned [] because the sign was too far from any known road segment.
-    if (waypoints.length < 2) {
-      const orientation = getStreetOrientation(sign.address);
-      const cosLat = Math.cos(sign.lat * Math.PI / 180);
-      const halfLat = halfLengthM / 111320;
-      const halfLng = halfLengthM / (111320 * cosLat);
-      waypoints =
-        orientation === "EW"
-          ? [[sign.lat, sign.lng - halfLng], [sign.lat, sign.lng + halfLng]]
-          : [[sign.lat - halfLat, sign.lng], [sign.lat + halfLat, sign.lng]];
-    }
+    if (waypoints.length < 2) continue;
 
     waypoints = offsetPolylinePoints(waypoints, sign.lat, sign.lng, LATERAL_OFFSET_M);
 
@@ -1230,57 +1218,6 @@ export function setSnowRoutesVisible(visible: boolean): void {
   _snowRoutesVisible = visible;
   if (_map === null) return;
   for (const layer of _snowRouteLayers) {
-    if (visible) {
-      layer.addTo(_map);
-    } else {
-      layer.remove();
-    }
-  }
-}
-
-// ─── F-38 Bus Stop Markers ───────────────────────────────────────────────────
-
-/**
- * Render a 🚌 marker for each bus stop.
- * Clears existing bus stop markers before rendering the new set.
- */
-export function renderBusStopMarkers(stops: BusStop[], visible: boolean): void {
-  for (const layer of _busStopLayers) {
-    layer.remove();
-  }
-  _busStopLayers = [];
-
-  _busStopsVisible = visible;
-
-  if (_map === null) return;
-
-  const L = getL();
-
-  for (const stop of stops) {
-    const icon = L.divIcon({
-      html: "🚌",
-      className: "sign-emoji-marker",
-      iconSize: [14, 14],
-      iconAnchor: [7, 7],
-    });
-
-    const marker = L.marker([stop.lat, stop.lng], { icon });
-    marker.bindPopup(stop.name);
-
-    if (visible) {
-      marker.addTo(_map);
-    }
-    _busStopLayers.push(marker);
-  }
-}
-
-/**
- * Show or hide all bus stop markers by adding/removing them from the map.
- */
-export function setBusStopsVisible(visible: boolean): void {
-  _busStopsVisible = visible;
-  if (_map === null) return;
-  for (const layer of _busStopLayers) {
     if (visible) {
       layer.addTo(_map);
     } else {

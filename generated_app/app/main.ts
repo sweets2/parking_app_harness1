@@ -36,8 +36,6 @@ import {
   setGarageMarkersVisible,
   renderSnowEmergencyRoutes,
   setSnowRoutesVisible,
-  renderBusStopMarkers,
-  setBusStopsVisible,
 } from "./map";
 import { getStreetName, geocodeCrossStreet, seedGeocodeCache } from "./geo";
 import { createApp } from "./app";
@@ -52,7 +50,7 @@ import {
 } from "../shared/parking-logic";
 import { createSpotStorage } from "../shared/storage";
 import type { SavedSpot } from "../shared/storage";
-import type { Sign, StreetCleaningEntry, StreetCleaningData, RoadGeometry, Garage, SnowRoute, BusStop } from "../shared/types";
+import type { Sign, StreetCleaningEntry, StreetCleaningData, RoadGeometry, Garage, SnowRoute } from "../shared/types";
 import {
   renderLoading,
   hideLoading,
@@ -429,12 +427,6 @@ export async function initBrowserApp(): Promise<void> {
     })
     .catch(() => { /* non-fatal */ });
 
-  // Fire-and-forget: fetch bus stops and render markers (off by default).
-  fetch("data/bus-stops.json")
-    .then((r) => r.json())
-    .then((stops: BusStop[]) => { renderBusStopMarkers(stops, false); })
-    .catch(() => { /* non-fatal */ });
-
   // Wire tow-zones legend toggle
   const towLegend = document.getElementById("tow-legend");
   const towToggle = document.getElementById("tow-toggle");
@@ -509,21 +501,6 @@ export async function initBrowserApp(): Promise<void> {
     snowToggle.setAttribute("aria-pressed", String(next));
     document.getElementById("snow-legend")?.classList.toggle("snow-off", !next);
     const status = document.getElementById("snow-legend")?.querySelector(".snow-status");
-    if (status !== null && status !== undefined) {
-      status.textContent = next ? "Enabled" : "Hidden";
-    }
-  });
-
-  // Wire bus stops toggle
-  const busToggle = document.getElementById("bus-toggle");
-  busToggle?.addEventListener("click", () => {
-    const isOn = busToggle.getAttribute("aria-pressed") === "true";
-    const next = !isOn;
-    setBusStopsVisible(next);
-    track("bus-stops-toggled", { enabled: next });
-    busToggle.setAttribute("aria-pressed", String(next));
-    document.getElementById("bus-legend")?.classList.toggle("bus-off", !next);
-    const status = document.getElementById("bus-legend")?.querySelector(".bus-status");
     if (status !== null && status !== undefined) {
       status.textContent = next ? "Enabled" : "Hidden";
     }

@@ -57,7 +57,7 @@ function normalizeName(name: string): string {
 
 export async function runBuildRoadGeometry(): Promise<void> {
   const overpassQuery = `[out:json][timeout:30];
-way["highway"]["name"](40.733,-74.042,40.756,-74.024);
+way["highway"]["name"](40.728,-74.060,40.760,-74.022);
 out geom;`;
 
   const url = "https://overpass-api.de/api/interpreter";

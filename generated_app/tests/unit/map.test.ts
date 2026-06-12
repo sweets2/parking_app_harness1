@@ -909,6 +909,22 @@ describe("F-07 map module", () => {
       expect(polylines.length).toBe(0);
     });
 
+    it("GIVEN renderTowSegments renders, WHEN setTowSignsVisible(false) then setTowSignsVisible(true), THEN the same segment layers are restored on the map", async () => {
+      const { initMap, renderTowSegments, setTowSignsVisible } = await import("../../app/map");
+      initMap();
+      renderTowSegments([makeSign()]);
+      setTowSignsVisible(false);
+      let polylines = mockMapInstance._layers.filter(
+        (l) => l._options["_isPolyline"] === true
+      );
+      expect(polylines.length).toBe(0);
+      setTowSignsVisible(true);
+      polylines = mockMapInstance._layers.filter(
+        (l) => l._options["_isPolyline"] === true
+      );
+      expect(polylines.length).toBe(2);
+    });
+
     // ─── F-24 casing style tests ───────────────────────────────────────────────
 
     it("F-24: GIVEN initMap is called and 1 sign is passed to renderTowSegments, THEN L.polyline is called twice (outer + inner casing)", async () => {
@@ -1772,98 +1788,5 @@ describe("F-37 snow emergency routes", () => {
     expect(mockMapInstance._layers.length).toBe(0);
     setSnowRoutesVisible(true);
     expect(mockMapInstance._layers.length).toBe(1);
-  });
-});
-
-// ─── F-38 Bus Stop Markers ────────────────────────────────────────────────────
-
-import type { BusStop } from "../../shared/types";
-
-describe("F-38 bus stop markers", () => {
-  function makeBusStop(overrides: Partial<BusStop> = {}): BusStop {
-    return {
-      id: "stop-1",
-      name: "Washington St & 1st St",
-      lat: 40.736,
-      lng: -74.034,
-      ...overrides,
-    };
-  }
-
-  beforeEach(() => {
-    installLeafletMock();
-    vi.resetModules();
-  });
-
-  it("GIVEN a stops array of 3 BusStop objects and initMap() called, WHEN renderBusStopMarkers(stops, true) is called, THEN mockMapInstance._layers contains 3 markers", async () => {
-    const { initMap, renderBusStopMarkers } = await import("../../app/map");
-    initMap();
-    const stops = [
-      makeBusStop({ id: "s1" }),
-      makeBusStop({ id: "s2", lat: 40.737 }),
-      makeBusStop({ id: "s3", lat: 40.738 }),
-    ];
-    renderBusStopMarkers(stops, true);
-    expect(mockMapInstance._layers.length).toBe(3);
-  });
-
-  it("GIVEN bus stop markers have been rendered (visible = true), WHEN renderBusStopMarkers(stops, false) is called, THEN mockMapInstance._layers contains 0 markers", async () => {
-    const { initMap, renderBusStopMarkers } = await import("../../app/map");
-    initMap();
-    const stops = [
-      makeBusStop({ id: "s1" }),
-      makeBusStop({ id: "s2", lat: 40.737 }),
-      makeBusStop({ id: "s3", lat: 40.738 }),
-    ];
-    renderBusStopMarkers(stops, true);
-    renderBusStopMarkers(stops, false);
-    expect(mockMapInstance._layers.length).toBe(0);
-  });
-
-  it("GIVEN renderBusStopMarkers(stops, false) is called on initial render (visible = false), THEN no markers are present in mockMapInstance._layers", async () => {
-    const { initMap, renderBusStopMarkers } = await import("../../app/map");
-    initMap();
-    const stops = [
-      makeBusStop({ id: "s1" }),
-      makeBusStop({ id: "s2", lat: 40.737 }),
-    ];
-    renderBusStopMarkers(stops, false);
-    expect(mockMapInstance._layers.length).toBe(0);
-  });
-
-  it("GIVEN an empty stops array, WHEN renderBusStopMarkers([], true) is called, THEN no markers are added and no error is thrown", async () => {
-    const { initMap, renderBusStopMarkers } = await import("../../app/map");
-    initMap();
-    expect(() => renderBusStopMarkers([], true)).not.toThrow();
-    expect(mockMapInstance._layers.length).toBe(0);
-  });
-
-  it("GIVEN 3 bus stop markers rendered (visible = true), WHEN setBusStopsVisible(false) is called, THEN all markers are removed from mockMapInstance._layers", async () => {
-    const { initMap, renderBusStopMarkers, setBusStopsVisible } = await import("../../app/map");
-    initMap();
-    const stops = [
-      makeBusStop({ id: "s1" }),
-      makeBusStop({ id: "s2", lat: 40.737 }),
-      makeBusStop({ id: "s3", lat: 40.738 }),
-    ];
-    renderBusStopMarkers(stops, true);
-    expect(mockMapInstance._layers.length).toBe(3);
-    setBusStopsVisible(false);
-    expect(mockMapInstance._layers.length).toBe(0);
-  });
-
-  it("GIVEN bus stop markers hidden, WHEN setBusStopsVisible(true) is called, THEN all markers are re-added to mockMapInstance._layers", async () => {
-    const { initMap, renderBusStopMarkers, setBusStopsVisible } = await import("../../app/map");
-    initMap();
-    const stops = [
-      makeBusStop({ id: "s1" }),
-      makeBusStop({ id: "s2", lat: 40.737 }),
-      makeBusStop({ id: "s3", lat: 40.738 }),
-    ];
-    renderBusStopMarkers(stops, true);
-    setBusStopsVisible(false);
-    expect(mockMapInstance._layers.length).toBe(0);
-    setBusStopsVisible(true);
-    expect(mockMapInstance._layers.length).toBe(3);
   });
 });
