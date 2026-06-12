@@ -811,6 +811,8 @@ function getSnappedPinPosition(sign: Sign): [number, number] {
   const cosLat = Math.cos(sign.lat * Math.PI / 180);
   let bestDist = Infinity;
   let projPt: [number, number] = [sign.lat, sign.lng];
+  let bestA: [number, number] = [sign.lat, sign.lng];
+  let bestB: [number, number] = [sign.lat, sign.lng];
 
   for (const way of ways) {
     for (let si = 0; si < way.length - 1; si++) {
@@ -832,6 +834,34 @@ function getSnappedPinPosition(sign: Sign): [number, number] {
       if (d < bestDist) {
         bestDist = d;
         projPt = [A[0] + t * (B[0] - A[0]), A[1] + t * (B[1] - A[1])];
+        bestA = A;
+        bestB = B;
+      }
+    }
+  }
+
+  // Apply parity-based lateral offset to move pin from centerline to curb.
+  const numMatch = sign.address.match(/^(\d+)/);
+  if (numMatch !== null) {
+    const streetKey = normalizeToGeometryKey(
+      sign.address.replace(/^\d[\d-]*\s+/, "").trim()
+    );
+    const oddDir = _streetParity[streetKey];
+    if (oddDir !== undefined) {
+      const isOdd = parseInt(numMatch[1], 10) % 2 === 1;
+      const dir: 1 | -1 = isOdd ? oddDir : (oddDir === 1 ? -1 : 1);
+      const cosLat2 = Math.cos(projPt[0] * Math.PI / 180);
+      const dYseg = bestB[0] - bestA[0];
+      const dXseg = (bestB[1] - bestA[1]) * cosLat2;
+      const lenSeg = Math.sqrt(dYseg * dYseg + dXseg * dXseg);
+      if (lenSeg > 0) {
+        // Right-perpendicular — same convention as offsetPolylinePoints
+        const perpX = dYseg / lenSeg;   // east component
+        const perpY = -dXseg / lenSeg;  // north component
+        projPt = [
+          projPt[0] + dir * LATERAL_OFFSET_M * perpY / 111320,
+          projPt[1] + dir * LATERAL_OFFSET_M * perpX / (111320 * cosLat2),
+        ];
       }
     }
   }

@@ -1991,3 +1991,81 @@ describe("F-41 normalization alignment", () => {
     }
   });
 });
+
+// ─── F-42 getSnappedPinPosition parity offset ────────────────────────────────
+
+describe("F-42 getSnappedPinPosition parity offset", () => {
+  // N-S road segment: A = [40.740, -74.030], B = [40.741, -74.030]
+  // projPt for a centerline sign at [40.7405, -74.030] is itself.
+  // Right-perp of this segment: dY>0, dX=0 → perpX=1 (east), perpY=0
+  // dir=1 → pin shifts east (dLng > 0); dir=-1 → west (dLng < 0)
+
+  beforeEach(() => {
+    installLeafletMock();
+    vi.resetModules();
+  });
+
+  it("F-42: GIVEN odd address '101 BLOOMFIELD ST' (forcedDir=1 → east), WHEN renderSignPins is called, THEN pin marker lng > -74.030 (shifted east)", async () => {
+    const { initMap, renderSignPins, initRoadGeometry, initStreetParity } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "BLOOMFIELD ST": [[[40.740, -74.030], [40.741, -74.030]]] });
+    initStreetParity({ "BLOOMFIELD ST": 1 }); // odd addresses on east (+1) side
+    const sign = makeSign({ address: "101 BLOOMFIELD ST", lat: 40.7405, lng: -74.030 });
+    renderSignPins([sign], NOW_STABLE);
+    const towPins = mockMapInstance._layers.filter((l) => l._options["pane"] === "towSignPane");
+    expect(towPins.length).toBe(1);
+    const pin = towPins[0];
+    expect(pin).toBeDefined();
+    if (pin !== undefined) {
+      expect(pin._lng).toBeGreaterThan(-74.030);
+    }
+  });
+
+  it("F-42: GIVEN even address '100 BLOOMFIELD ST' (forcedDir=-1 → west), WHEN renderSignPins is called, THEN pin marker lng < -74.030 (shifted west)", async () => {
+    const { initMap, renderSignPins, initRoadGeometry, initStreetParity } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "BLOOMFIELD ST": [[[40.740, -74.030], [40.741, -74.030]]] });
+    initStreetParity({ "BLOOMFIELD ST": 1 }); // odd on east, so even on west
+    const sign = makeSign({ address: "100 BLOOMFIELD ST", lat: 40.7405, lng: -74.030 });
+    renderSignPins([sign], NOW_STABLE);
+    const towPins = mockMapInstance._layers.filter((l) => l._options["pane"] === "towSignPane");
+    expect(towPins.length).toBe(1);
+    const pin = towPins[0];
+    expect(pin).toBeDefined();
+    if (pin !== undefined) {
+      expect(pin._lng).toBeLessThan(-74.030);
+    }
+  });
+
+  it("F-42: GIVEN initStreetParity({}) (no entry for BLOOMFIELD ST), WHEN renderSignPins is called, THEN pin marker lng === -74.030 (no offset applied)", async () => {
+    const { initMap, renderSignPins, initRoadGeometry, initStreetParity } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "BLOOMFIELD ST": [[[40.740, -74.030], [40.741, -74.030]]] });
+    initStreetParity({});
+    const sign = makeSign({ address: "101 BLOOMFIELD ST", lat: 40.7405, lng: -74.030 });
+    renderSignPins([sign], NOW_STABLE);
+    const towPins = mockMapInstance._layers.filter((l) => l._options["pane"] === "towSignPane");
+    expect(towPins.length).toBe(1);
+    const pin = towPins[0];
+    expect(pin).toBeDefined();
+    if (pin !== undefined) {
+      expect(pin._lng).toBeCloseTo(-74.030, 6);
+    }
+  });
+
+  it("F-42: GIVEN initStreetParity({ 'BLOOMFIELD ST': 1 }) and odd address '101 BLOOMFIELD ST', WHEN renderUpcomingSignPins is called, THEN upcoming pin marker lng > -74.030 (shifted east)", async () => {
+    const { initMap, renderUpcomingSignPins, initRoadGeometry, initStreetParity } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "BLOOMFIELD ST": [[[40.740, -74.030], [40.741, -74.030]]] });
+    initStreetParity({ "BLOOMFIELD ST": 1 });
+    const sign = makeSign({ address: "101 BLOOMFIELD ST", lat: 40.7405, lng: -74.030 });
+    renderUpcomingSignPins([sign], NOW_STABLE);
+    const upcomingPins = mockMapInstance._layers.filter((l) => l._options["pane"] === "upcomingPane");
+    expect(upcomingPins.length).toBe(1);
+    const pin = upcomingPins[0];
+    expect(pin).toBeDefined();
+    if (pin !== undefined) {
+      expect(pin._lng).toBeGreaterThan(-74.030);
+    }
+  });
+});

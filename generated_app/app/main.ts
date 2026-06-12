@@ -377,11 +377,18 @@ export async function initBrowserApp(): Promise<void> {
     })
     .catch(() => { /* non-fatal — runtime Nominatim calls serve as fallback */ });
 
-  // Await road geometry before rendering signs so renderTowSegments always has OSM data.
-  try {
-    const geoRes = await fetch("data/road-geometry.json");
-    initRoadGeometry(await geoRes.json() as RoadGeometry);
-  } catch { /* non-fatal: renderTowSegments falls back to heuristic */ }
+  // Await road geometry + street parity before rendering signs — both are needed
+  // before the first renderTowSegments call so offsets are applied on initial render.
+  await Promise.all([
+    fetch("data/road-geometry.json")
+      .then((r) => r.json())
+      .then((g: RoadGeometry) => { initRoadGeometry(g); })
+      .catch(() => { /* non-fatal */ }),
+    fetch("data/street-parity.json")
+      .then((r) => r.json())
+      .then((data: unknown) => { initStreetParity(data as Record<string, 1 | -1>); })
+      .catch(() => { /* non-fatal */ }),
+  ]);
 
   // Fetch sign data
   let signsData: { signs: Sign[]; fetchTime: Date };
@@ -462,12 +469,6 @@ export async function initBrowserApp(): Promise<void> {
     .then(({ routes }: { routes: SnowRoute[] }) => {
       renderSnowEmergencyRoutes(routes, true);
     })
-    .catch(() => { /* non-fatal */ });
-
-  // Fire-and-forget: fetch street parity data for curb-side offset.
-  fetch("data/street-parity.json")
-    .then((r) => r.json())
-    .then((data: unknown) => { initStreetParity(data as Record<string, 1 | -1>); })
     .catch(() => { /* non-fatal */ });
 
   // Wire tow-zones legend toggle
