@@ -164,6 +164,12 @@ The OSM bounding box used to build `road-geometry.json` is slightly larger than 
 **Static data files must be added to the build script's cp block**
 Any feature that writes a new static JSON file to `data/` (e.g. `data/garages.json`, `data/snow-emergency-routes.json`) MUST also add a cp step to the `build` script in `package.json` so the file lands in `app/data/` where the browser fetch can reach it. Omitting this step causes the fire-and-forget fetch to 404 silently and the layer never renders — no console error, no test failure. The pattern is: `(cp data/yourfile.json app/data/yourfile.json 2>/dev/null || true)` chained at the end of the build command.
 
+**F-41/F-42 — street-parity.json must be awaited before createApp()**
+`data/street-parity.json` is fetched inside a `Promise.all` alongside `road-geometry.json`, both awaited before `createApp()` runs. Do NOT move it to a fire-and-forget fetch after `createApp()` — `renderTowSegments` and `renderSignPins` are called during initial render (triggered by `createApp`), and `_streetParity` must already be populated at that point or all `forcedDir` lookups return `undefined` and every sign renders on the centerline.
+
+**F-42 — getSnappedPinPosition applies curb offset**
+`getSnappedPinPosition` now tracks `bestA` and `bestB` (the endpoints of the nearest road segment) alongside `projPt` and `bestDist`. After the loop it computes `forcedDir` from `_streetParity` and the sign's house number parity, then applies a lateral offset to `projPt` using the right-perpendicular of the best segment — the same convention as `offsetPolylinePoints` (`perpX = dY/len, perpY = -dX/len`). Do not revert this to centerline-only projection.
+
 ---
 
 ## Agent pipeline
