@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { Sign, StreetCleaningEntry, Garage, SnowRoute } from "../../shared/types";
+import type { Sign, StreetCleaningEntry, Garage, SnowRoute, RoadGeometry } from "../../shared/types";
 import { NOW_STABLE } from "../fixtures/signs";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -2275,5 +2275,84 @@ describe("F-43 PIN_LATERAL_OFFSET_M pin distance", () => {
       const expectedDLng = PIN_LATERAL_OFFSET_M / (111320 * cosLat);
       expect(marker._lng).toBeCloseTo(-74.030 - expectedDLng, 6);
     }
+  });
+});
+
+// ─── F-44 correctSignPositions ────────────────────────────────────────────────
+
+describe("F-44 correctSignPositions", () => {
+  beforeEach(() => {
+    installLeafletMock();
+    vi.resetModules();
+  });
+
+  it("F-44: GIVEN 4 signs on a N-S road where house 200 is geocoded too far north (past 300 and 400), WHEN correctSignPositions is called, THEN the outlier lat is reduced below its original value", async () => {
+    const { correctSignPositions } = await import("../../app/map");
+    // Road runs from lat 40.740 to 40.745 — house numbers should increase northward
+    const road: RoadGeometry = {
+      "TEST AVE": [[[40.740, -74.030], [40.741, -74.030], [40.742, -74.030], [40.743, -74.030], [40.744, -74.030], [40.745, -74.030]]],
+    };
+    // s2 (houseNum 200) is geocoded too far north at 40.744, past s3 (40.742) and s4 (40.743).
+    // It should be corrected to somewhere around 40.741–40.742 (between s1 and s3 by house number).
+    const signs: Sign[] = [
+      makeSign({ id: "s1", address: "100 TEST AVE", lat: 40.741, lng: -74.030 }),
+      makeSign({ id: "s2", address: "200 TEST AVE", lat: 40.744, lng: -74.030 }),
+      makeSign({ id: "s3", address: "300 TEST AVE", lat: 40.742, lng: -74.030 }),
+      makeSign({ id: "s4", address: "400 TEST AVE", lat: 40.743, lng: -74.030 }),
+    ];
+    const corrected = correctSignPositions(signs, road);
+    const s2 = corrected.find((s) => s.id === "s2");
+    expect(s2).toBeDefined();
+    if (s2 !== undefined) {
+      // Should be moved south from 40.744 to somewhere between s1 (40.741) and s3 (40.742)
+      expect(s2.lat).toBeLessThan(40.744);
+      expect(s2.lat).toBeGreaterThan(40.740);
+    }
+    // Other signs should be unchanged
+    expect(corrected.find((s) => s.id === "s1")?.lat).toBeCloseTo(40.741, 6);
+    expect(corrected.find((s) => s.id === "s3")?.lat).toBeCloseTo(40.742, 6);
+    expect(corrected.find((s) => s.id === "s4")?.lat).toBeCloseTo(40.743, 6);
+  });
+
+  it("F-44: GIVEN signs already in monotonic order, WHEN correctSignPositions is called, THEN all signs are returned unchanged", async () => {
+    const { correctSignPositions } = await import("../../app/map");
+    const road: RoadGeometry = {
+      "CLEAN ST": [[[40.740, -74.030], [40.741, -74.030], [40.742, -74.030]]],
+    };
+    const signs: Sign[] = [
+      makeSign({ id: "s1", address: "100 CLEAN ST", lat: 40.740, lng: -74.030 }),
+      makeSign({ id: "s2", address: "200 CLEAN ST", lat: 40.741, lng: -74.030 }),
+      makeSign({ id: "s3", address: "300 CLEAN ST", lat: 40.742, lng: -74.030 }),
+    ];
+    const corrected = correctSignPositions(signs, road);
+    expect(corrected.find((s) => s.id === "s1")?.lat).toBeCloseTo(40.740, 6);
+    expect(corrected.find((s) => s.id === "s2")?.lat).toBeCloseTo(40.741, 6);
+    expect(corrected.find((s) => s.id === "s3")?.lat).toBeCloseTo(40.742, 6);
+  });
+
+  it("F-44: GIVEN only 2 signs on a street, WHEN correctSignPositions is called, THEN signs are returned unchanged (insufficient data)", async () => {
+    const { correctSignPositions } = await import("../../app/map");
+    const road: RoadGeometry = {
+      "SHORT ST": [[[40.740, -74.030], [40.742, -74.030]]],
+    };
+    const signs: Sign[] = [
+      makeSign({ id: "s1", address: "100 SHORT ST", lat: 40.744, lng: -74.030 }),
+      makeSign({ id: "s2", address: "200 SHORT ST", lat: 40.740, lng: -74.030 }),
+    ];
+    const corrected = correctSignPositions(signs, road);
+    expect(corrected.find((s) => s.id === "s1")?.lat).toBeCloseTo(40.744, 6);
+    expect(corrected.find((s) => s.id === "s2")?.lat).toBeCloseTo(40.740, 6);
+  });
+
+  it("F-44: GIVEN signs on a street not in road geometry, WHEN correctSignPositions is called, THEN signs are returned as-is", async () => {
+    const { correctSignPositions } = await import("../../app/map");
+    const signs: Sign[] = [
+      makeSign({ id: "s1", address: "100 UNKNOWN ST", lat: 40.744, lng: -74.030 }),
+      makeSign({ id: "s2", address: "200 UNKNOWN ST", lat: 40.740, lng: -74.030 }),
+      makeSign({ id: "s3", address: "300 UNKNOWN ST", lat: 40.745, lng: -74.030 }),
+    ];
+    const corrected = correctSignPositions(signs, {});
+    expect(corrected.find((s) => s.id === "s1")?.lat).toBeCloseTo(40.744, 6);
+    expect(corrected.find((s) => s.id === "s2")?.lat).toBeCloseTo(40.740, 6);
   });
 });

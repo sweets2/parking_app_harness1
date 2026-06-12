@@ -128,7 +128,7 @@ function dotScale(): number {
 // ─── Tow sign dot icons ───────────────────────────────────────────────────────
 
 export const LATERAL_OFFSET_M = 4.0;
-export const PIN_LATERAL_OFFSET_M = 18.0;
+export const PIN_LATERAL_OFFSET_M = 22.0;
 const CLEANING_LANE_WIDTH_M = 3.5;
 const HOBOKEN_COS_LAT = Math.cos(40.744 * Math.PI / 180);
 
@@ -1499,6 +1499,223 @@ export function setSnowRoutesVisible(visible: boolean): void {
  * When it resolves with a location string, the popup is updated to highlight
  * that block. A stale-token guard prevents out-of-order updates.
  */
+// ─── F-44 correctSignPositions ────────────────────────────────────────────────
+
+function houseNumMidpoint(address: string): number {
+  const rangeMatch = address.match(/^0*(\d+)-0*(\d+)\s+/);
+  if (rangeMatch !== null) {
+    const a = rangeMatch[1];
+    const b = rangeMatch[2];
+    if (a !== undefined && b !== undefined) {
+      return (parseInt(a, 10) + parseInt(b, 10)) / 2;
+    }
+  }
+  const singleMatch = address.match(/^0*(\d+)\s+/);
+  if (singleMatch !== null) {
+    const n = singleMatch[1];
+    if (n !== undefined) return parseInt(n, 10);
+  }
+  return 0;
+}
+
+function snapToArcPos(ways: [number, number][][], lat: number, lng: number): number {
+  const cosLat = Math.cos(lat * Math.PI / 180);
+  const flat: [number, number][] = [];
+  for (const way of ways) {
+    for (const pt of way) {
+      flat.push(pt);
+    }
+  }
+  if (flat.length < 2) return 0;
+
+  const cumArc: number[] = [0];
+  for (let i = 1; i < flat.length; i++) {
+    const prev = flat[i - 1];
+    const cur = flat[i];
+    if (prev === undefined || cur === undefined) {
+      cumArc.push(cumArc[cumArc.length - 1] ?? 0);
+      continue;
+    }
+    const dy = (cur[0] - prev[0]) * 111320;
+    const dx = (cur[1] - prev[1]) * 111320 * cosLat;
+    cumArc.push((cumArc[cumArc.length - 1] ?? 0) + Math.sqrt(dy * dy + dx * dx));
+  }
+
+  let bestDist = Infinity;
+  let bestArcPos = 0;
+  for (let i = 0; i < flat.length - 1; i++) {
+    const A = flat[i];
+    const B = flat[i + 1];
+    if (A === undefined || B === undefined) continue;
+    const ax = (A[0] - lat) * 111320;
+    const ay = (A[1] - lng) * 111320 * cosLat;
+    const bx = (B[0] - lat) * 111320;
+    const by = (B[1] - lng) * 111320 * cosLat;
+    const abx = bx - ax;
+    const aby = by - ay;
+    const ab2 = abx * abx + aby * aby;
+    if (ab2 === 0) continue;
+    const t = Math.max(0, Math.min(1, -(ax * abx + ay * aby) / ab2));
+    const px = ax + t * abx;
+    const py = ay + t * aby;
+    const d = Math.sqrt(px * px + py * py);
+    if (d < bestDist) {
+      bestDist = d;
+      const arcA = cumArc[i] ?? 0;
+      const arcB = cumArc[i + 1] ?? 0;
+      bestArcPos = arcA + t * (arcB - arcA);
+    }
+  }
+  return bestArcPos;
+}
+
+function arcPosToLatLng(ways: [number, number][][], arcPos: number): [number, number] {
+  const flat: [number, number][] = [];
+  for (const way of ways) {
+    for (const pt of way) {
+      flat.push(pt);
+    }
+  }
+  if (flat.length === 0) return [0, 0];
+  const first = flat[0];
+  if (first === undefined) return [0, 0];
+  if (flat.length === 1) return first;
+
+  const cosLat = Math.cos(first[0] * Math.PI / 180);
+  let acc = 0;
+  for (let i = 0; i < flat.length - 1; i++) {
+    const A = flat[i];
+    const B = flat[i + 1];
+    if (A === undefined || B === undefined) continue;
+    const dy = (B[0] - A[0]) * 111320;
+    const dx = (B[1] - A[1]) * 111320 * cosLat;
+    const segLen = Math.sqrt(dy * dy + dx * dx);
+    if (acc + segLen >= arcPos) {
+      const t = segLen > 0 ? (arcPos - acc) / segLen : 0;
+      return [A[0] + t * (B[0] - A[0]), A[1] + t * (B[1] - A[1])];
+    }
+    acc += segLen;
+  }
+  const last = flat[flat.length - 1];
+  return last !== undefined ? last : [0, 0];
+}
+
+export function getRoadGeometry(): RoadGeometry {
+  return _roadGeometry;
+}
+
+/**
+ * Corrects signs whose geocoded lat/lng violates the monotonic ordering
+ * expected from their house numbers along their street. Uses all signs on
+ * a street as mutual calibration anchors — addresses are the source of truth,
+ * not the geocoder. Requires ≥3 signs per street and a single unambiguous
+ * outlier before applying any correction.
+ */
+export function correctSignPositions(signs: Sign[], roadGeometry: RoadGeometry): Sign[] {
+  if (signs.length === 0) return signs;
+
+  const byStreet = new Map<string, Sign[]>();
+  for (const sign of signs) {
+    const streetRaw = sign.address.replace(/^\d[\d-]*\s+/, "").trim();
+    const key = normalizeToGeometryKey(streetRaw);
+    const existing = byStreet.get(key);
+    if (existing !== undefined) {
+      existing.push(sign);
+    } else {
+      byStreet.set(key, [sign]);
+    }
+  }
+
+  const corrections = new Map<string, [number, number]>();
+
+  for (const [streetKey, streetSigns] of byStreet) {
+    if (streetSigns.length < 3) continue;
+    const ways = roadGeometry[streetKey];
+    if (ways === undefined || ways.length === 0) continue;
+
+    type Item = { sign: Sign; houseNum: number; arcPos: number };
+    const items: Item[] = streetSigns.map((sign) => ({
+      sign,
+      houseNum: houseNumMidpoint(sign.address),
+      arcPos: snapToArcPos(ways, sign.lat, sign.lng),
+    }));
+
+    items.sort((a, b) => a.houseNum - b.houseNum);
+
+    // Count how many order-inversions each sign participates in.
+    // An inversion is a pair (i < j by houseNum) where arcPos[i] > arcPos[j] + tolerance.
+    const TOLERANCE_M = 10;
+    const invCount = new Map<string, number>();
+    for (const item of items) invCount.set(item.sign.id, 0);
+
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i];
+        const b = items[j];
+        if (a === undefined || b === undefined) continue;
+        if (a.arcPos > b.arcPos + TOLERANCE_M) {
+          invCount.set(a.sign.id, (invCount.get(a.sign.id) ?? 0) + 1);
+          invCount.set(b.sign.id, (invCount.get(b.sign.id) ?? 0) + 1);
+        }
+      }
+    }
+
+    let maxInv = 0;
+    for (const count of invCount.values()) {
+      if (count > maxInv) maxInv = count;
+    }
+    if (maxInv === 0) continue;
+
+    // Only correct when there is exactly one sign with the highest inversion count.
+    const [outlierItem, second] = items.filter((item) => (invCount.get(item.sign.id) ?? 0) === maxInv);
+    if (outlierItem === undefined || second !== undefined) continue;
+
+    const outlierIdx = items.indexOf(outlierItem);
+
+    // Find the nearest clean neighbors by house number (adjacent in sorted order).
+    let lower: Item | null = null;
+    for (let j = outlierIdx - 1; j >= 0; j--) {
+      const candidate = items[j];
+      if (candidate !== undefined && (invCount.get(candidate.sign.id) ?? 0) < maxInv) {
+        lower = candidate;
+        break;
+      }
+    }
+
+    let upper: Item | null = null;
+    for (let j = outlierIdx + 1; j < items.length; j++) {
+      const candidate = items[j];
+      if (candidate !== undefined && (invCount.get(candidate.sign.id) ?? 0) < maxInv) {
+        upper = candidate;
+        break;
+      }
+    }
+
+    let targetArcPos: number;
+    if (lower !== null && upper !== null) {
+      const range = upper.houseNum - lower.houseNum;
+      const frac = range > 0 ? (outlierItem.houseNum - lower.houseNum) / range : 0.5;
+      targetArcPos = lower.arcPos + frac * (upper.arcPos - lower.arcPos);
+    } else if (lower !== null) {
+      targetArcPos = lower.arcPos + 5;
+    } else if (upper !== null) {
+      targetArcPos = upper.arcPos - 5;
+    } else {
+      continue;
+    }
+
+    corrections.set(outlierItem.sign.id, arcPosToLatLng(ways, targetArcPos));
+  }
+
+  if (corrections.size === 0) return signs;
+
+  return signs.map((sign) => {
+    const fix = corrections.get(sign.id);
+    if (fix === undefined) return sign;
+    return { ...sign, lat: fix[0], lng: fix[1] };
+  });
+}
+
 export function showStreetPopup(
   lat: number,
   lng: number,

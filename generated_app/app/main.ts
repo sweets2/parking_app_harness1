@@ -37,6 +37,8 @@ import {
   renderSnowEmergencyRoutes,
   setSnowRoutesVisible,
   initStreetParity,
+  correctSignPositions,
+  getRoadGeometry,
 } from "./map";
 import { getStreetName, geocodeCrossStreet, seedGeocodeCache } from "./geo";
 import { createApp } from "./app";
@@ -454,6 +456,10 @@ export async function initBrowserApp(): Promise<void> {
       // Fall back to the first fetch's signs — signsData is unchanged
     }
   }
+
+  // Use address numbers as source of truth — fix signs whose geocoded position
+  // violates the monotonic house-number ordering along their street.
+  signsData = { ...signsData, signs: correctSignPositions(signsData.signs, getRoadGeometry()) };
 
   // Create app state machine
   const app: App = createApp({ storage, renderState }, signsData);

@@ -1049,5 +1049,26 @@
       "specs/F-43.md"
     ],
     "run_tests": true
+  },
+  {
+    "id": "F-44",
+    "name": "Fix: Correct Sign Positions Using Address-Number Interpolation",
+    "status": "DONE",
+    "order": 52,
+    "depends_on": [
+      "F-43"
+    ],
+    "context_files": [
+      "app/map.ts",
+      "app/main.ts",
+      "tests/unit/map.test.ts"
+    ],
+    "output_files": [
+      "app/map.ts",
+      "app/main.ts",
+      "tests/unit/map.test.ts",
+      "specs/F-44.md"
+    ],
+    "run_tests": true
   }
 ]
