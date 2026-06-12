@@ -14,6 +14,19 @@ const fs   = require('fs')
 const path = require('path')
 const { execFileSync } = require('child_process')
 
+function acquireLock(lockPath) {
+  while (true) {
+    try { fs.closeSync(fs.openSync(lockPath, 'wx')); return }
+    catch (e) {
+      if (e.code !== 'EEXIST') throw e
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50)
+    }
+  }
+}
+function releaseLock(lockPath) {
+  try { fs.unlinkSync(lockPath) } catch (_) {}
+}
+
 function die(msg) {
   process.stderr.write(`finalize-run: ${msg}\n`)
   process.exit(1)
@@ -39,7 +52,14 @@ if (writeMetrics) {
   const metricsLine = fs.readFileSync(0, 'utf8').trim()
   if (!metricsLine) die('--write-metrics: stdin was empty')
   const metricsPath = path.join(process.cwd(), 'harness', 'metrics.jsonl')
-  fs.appendFileSync(metricsPath, metricsLine + '\n', 'utf8')
+  const metricsLock = metricsPath + '.lock'
+  acquireLock(metricsLock)
+  process.on('exit', () => releaseLock(metricsLock))
+  try {
+    fs.appendFileSync(metricsPath, metricsLine + '\n', 'utf8')
+  } finally {
+    releaseLock(metricsLock)
+  }
   process.stdout.write(`metrics: appended 1 record to ${path.basename(metricsPath)}\n`)
 }
 

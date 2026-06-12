@@ -432,11 +432,14 @@ phase('Setup')
 
 const requestedFeature = args && args.feature ? String(args.feature) : null
 
-// Step 1: Read all spec front matter (one agent call)
-const allFrontMatterResult = await agent(
-  `Read the file harness/features.json and return its parsed contents as a JSON object with a "features" key containing the array. Return only the JSON object, no prose.`,
-  { schema: FRONT_MATTER_SCHEMA, label: 'read-features-json', phase: 'Setup' }
-)
+// Step 1: Read all spec front matter — skip the agent call when build-all.js has
+// already read features.json and passed the snapshot via args.features.
+const allFrontMatterResult = (args && args.features)
+  ? { features: args.features }
+  : await agent(
+      `Read the file harness/features.json and return its parsed contents as a JSON object with a "features" key containing the array. Return only the JSON object, no prose.`,
+      { schema: FRONT_MATTER_SCHEMA, label: 'read-features-json', phase: 'Setup' }
+    )
 
 // Step 2: Select target feature — pure JS, deterministic
 const features = [...(allFrontMatterResult ? allFrontMatterResult.features : [])].sort((a, b) => (a.order || 999) - (b.order || 999))
@@ -522,18 +525,17 @@ const metricVerdicts   = []   // e.g. ["FAIL", "NEEDS-REVISION", "PASS"]
 const metricTestRuns   = []   // {revision, passed, failed, typecheckPassed} per test run
 const metricFailures   = []   // all evaluator failure strings, accumulated
 
-// Step 4: Read CLAUDE.md + spec in one structured call; context files in parallel.
-// Prompt templates are embedded constants above — no agent reads needed for them.
-const [staticReads, contextContent] = await parallel([
-  () => agent(
-    `Read two files and return their exact full contents — do not summarize or paraphrase either.
+// Step 4: Pipeline reads — fire both immediately, await static first (2 small files),
+// then overlap spec-lint with the still-running context read.
+const staticReadsPromise = agent(
+  `Read two files and return their exact full contents — do not summarize or paraphrase either.
 File 1: CLAUDE.md → return as the "claudeMd" field.
 File 2: specs/${targetId}.md → return as the "featureSpec" field.`,
-    { schema: STATIC_READS_SCHEMA, label: `read-static:${targetId}`, phase: 'Setup' }
-  ),
-  () => contextFilePaths.length > 0
-    ? agent(
-        `Read the following files and concatenate their contents.
+  { schema: STATIC_READS_SCHEMA, label: `read-static:${targetId}`, phase: 'Setup' }
+)
+const contextPromise = contextFilePaths.length > 0
+  ? agent(
+      `Read the following files and concatenate their contents.
 Format each file as:
 === FILE: <path> ===
 <full file contents>
@@ -543,10 +545,11 @@ If a file does not exist yet, write:
 
 Files to read:
 ${contextFilePaths.map(toOutputPath).join('\n')}`,
-        { label: `read-context:${targetId}`, phase: 'Setup' }
-      )
-    : Promise.resolve('(no context files for this feature)'),
-])
+      { label: `read-context:${targetId}`, phase: 'Setup' }
+    )
+  : Promise.resolve('(no context files for this feature)')
+
+const staticReads = await staticReadsPromise
 if (!staticReads) {
   log('Failed to read CLAUDE.md or feature spec — aborting.')
   return { done: false, reason: `Failed to read static files for ${targetId}` }
@@ -567,7 +570,7 @@ const _gotchasStart = agentMd.indexOf('\n## Known gotchas')
 const _gotchasEnd   = agentMd.indexOf('\n## ', _gotchasStart + 1)
 const evalMd        = hardConstraintsOnly + agentMd.slice(_gotchasStart, _gotchasEnd)
 
-// ─── Phase 1.5: Validate Spec ───────────────────────────────────────────────
+// ─── Phase 1.5: Validate Spec (pure JS — runs before contextPromise resolves) ────
 
 phase('Validate')
 
@@ -578,25 +581,28 @@ if (!runTests) {
   if (!featureSpec || featureSpec.trim().length < 50) issues.push('Spec appears empty or truncated')
   if (!/\b(Given|When|Then)\b/i.test(featureSpec))   issues.push('No Given/When/Then test cases found')
   if (outputFiles.length === 0)                        issues.push('No output files listed')
-  const specValidation = { valid: issues.length === 0, issues }
 
-  if (!specValidation.valid) {
-    specValidation.issues.forEach(i => log(`  ⚠ ${i}`))
+  if (issues.length > 0) {
+    issues.forEach(i => log(`  ⚠ ${i}`))
     log(`Spec invalid — fix specs/${targetId}.md before retrying ${targetId}`)
-    const blockedSpecStuck = `# ${targetId} — Blocked at spec validation\n\n## Reason\nSpec validation failed before the Creator ran.\n\n## Issues\n${specValidation.issues.map(i => `- ${i}`).join('\n')}`
-    // Mutate only the target feature's status field — avoids passing the full JSON blob
-    // through an agent prompt, which risks reformatting or truncation.
+    const blockedSpecStuck = `# ${targetId} — Blocked at spec validation\n\n## Reason\nSpec validation failed before the Creator ran.\n\n## Issues\n${issues.map(i => `- ${i}`).join('\n')}`
+    // contextPromise is still running; we abandon it and return early.
     return await blockFeature(targetId, blockedSpecStuck, {
       label: 'invalid-spec', phase: 'Validate',
-      reason: 'Spec validation failed: ' + specValidation.issues.join('; '),
+      reason: 'Spec validation failed: ' + issues.join('; '),
     })
   }
   log('Spec valid ✓')
 }
 
-// ─── Phase 1.55: Spec Quality Lint ─────────────────────────────────────────
+// ─── Phase 1.55: Spec Quality Lint — overlapped with contextPromise ─────────
+//
+// spec-lint only needs featureSpec + hardConstraintsOnly (already available from staticReads).
+// By running it in parallel with the still-pending contextPromise, we hide the spec-lint
+// agent RTT behind the context read instead of paying it sequentially after Setup.
 
 let preflight = null
+let contextContent
 
 if (runTests) {
   const isMutationHint = outputFiles.some(file =>
@@ -614,10 +620,15 @@ ${hardConstraintsOnly}
 === FEATURE SPEC ===
 ${featureSpec}`
 
-  preflight = await agent(
-    `${SPEC_LINTER_TEMPLATE}\n\n${specLinterPayload}`,
-    { schema: PREFLIGHT_SCHEMA, label: `spec-lint:${targetId}`, phase: 'Validate' }
-  )
+  const [lintResult, resolvedContext] = await parallel([
+    () => agent(
+      `${SPEC_LINTER_TEMPLATE}\n\n${specLinterPayload}`,
+      { schema: PREFLIGHT_SCHEMA, label: `spec-lint:${targetId}`, phase: 'Validate' }
+    ),
+    () => contextPromise,
+  ])
+  preflight    = lintResult
+  contextContent = resolvedContext
 
   if (preflight && preflight.verdict === 'BLOCK') {
     const errorList = preflight.issues.map(i => `- [${i.severity}] ${i.text}`).join('\n')
@@ -636,6 +647,9 @@ ${featureSpec}`
   } else {
     log('Spec quality lint PASS ✓')
   }
+} else {
+  // Discovery feature — no spec-lint; just resolve contextPromise.
+  contextContent = await contextPromise
 }
 
 // ─── Phase 1.6: Mutation Baseline ──────────────────────────────────────────

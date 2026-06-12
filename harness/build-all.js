@@ -7,12 +7,35 @@ export const meta = {
 phase('Build')
 
 const stopOnBlocked = args && args.stopOnBlocked === true
-const retryBlocked = args && args.retryBlocked === true
+const retryBlocked  = args && args.retryBlocked  === true
+const maxParallel   = (args && args.maxParallel)  || 3
+
 let completed = 0
 const blockedFeatures = []
-// Track auto spec-fix attempts per feature to avoid infinite loops
 const specFixAttempts = {}
 const MAX_SPEC_FIX_ATTEMPTS = 2
+
+const FRONT_MATTER_SCHEMA = {
+  type: 'object',
+  required: ['features'],
+  properties: {
+    features: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['id', 'status', 'order', 'depends_on', 'output_files'],
+        properties: {
+          id:           { type: 'string' },
+          name:         { type: 'string' },
+          status:       { type: 'string' },
+          order:        { type: 'number' },
+          depends_on:   { type: 'array', items: { type: 'string' } },
+          output_files: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
+  },
+}
 
 if (retryBlocked) {
   log('retryBlocked=true — resetting all BLOCKED features to TODO...')
@@ -30,31 +53,64 @@ Log each command and its output.`,
 // Single token cap: +Nk harness directive > args.maxTokens > 5M default
 const tokenCap = budget.total ?? (args && args.maxTokens) ?? 5_000_000
 
+// ── Pre-loop setup ────────────────────────────────────────────────────────────
+
+// Read features.json once; each wave passes this snapshot to child workflows
+// so they skip their own read-features-json agent call (§4a shortcut in workflow.js).
+let featuresData = await agent(
+  'Read harness/features.json and return its parsed contents as a JSON object with a "features" key containing the array. Return only the JSON object, no prose.',
+  { schema: FRONT_MATTER_SCHEMA, label: 'read-features-initial', phase: 'Build' }
+)
+if (!featuresData) {
+  log('Failed to read features.json — aborting.')
+  return { completed, blocked: blockedFeatures, budgetSpent: budget.spent() }
+}
+let features = [...featuresData.features].sort((a, b) => (a.order || 999) - (b.order || 999))
+
+// npm install once before any verifiers run — prevents concurrent installs when wave > 1.
+await agent(
+  'Run: cd generated_app && (test -d node_modules || npm install)\nCapture and report output.',
+  { label: 'npm-install', phase: 'Build' }
+)
+
+// ── Wave selection ────────────────────────────────────────────────────────────
+
+// Returns up to maxParallel features from the ready queue with no output-file conflicts.
+// Greedy: iterate in dependency order, skip any feature whose output_files overlap with
+// files already claimed by a feature already in the wave.
+function buildWave(features, maxPar) {
+  const doneIds = new Set(features.filter(f => f.status === 'DONE').map(f => f.id))
+  const ready = features.filter(f =>
+    f.status === 'TODO' && (f.depends_on || []).every(d => doneIds.has(d))
+  )
+  const waveFiles = new Set()
+  const wave = []
+  for (const f of ready) {
+    if ((f.output_files || []).some(file => waveFiles.has(file))) continue
+    wave.push(f)
+    ;(f.output_files || []).forEach(file => waveFiles.add(file))
+    if (wave.length >= maxPar) break
+  }
+  return wave
+}
+
+// ── Main loop ─────────────────────────────────────────────────────────────────
+
 while (true) {
-  if (budget.spent() >= tokenCap - 150_000) {
-    log(`Near token cap (${budget.spent().toLocaleString()} / ${tokenCap.toLocaleString()}) — stopping.`)
-    break
-  }
+  const wave = buildWave(features, maxParallel)
 
-  const result = await workflow({ scriptPath: 'harness/workflow.js' })
-
-  if (!result) {
-    log('Inner workflow returned null — aborting.')
-    break
-  }
-
-  if (result.done) {
-    // If there are still features that were blocked at spec-lint (not runtime failures),
-    // attempt to auto-fix their specs and keep going rather than stopping.
+  if (wave.length === 0) {
+    // No ready TODO features — check for fixable blocked specs before halting.
     const fixableBlocked = blockedFeatures.filter(id => (specFixAttempts[id] || 0) < MAX_SPEC_FIX_ATTEMPTS)
     if (fixableBlocked.length > 0 && !stopOnBlocked) {
       log(`No immediately buildable features, but ${fixableBlocked.length} blocked feature(s) may be fixable. Attempting auto spec-fix...`)
-      const featureId = fixableBlocked[0]
-      const attempts = specFixAttempts[featureId] || 0
-      log(`Auto-fixing spec for ${featureId} (attempt ${attempts + 1}/${MAX_SPEC_FIX_ATTEMPTS})...`)
-
-      const fixed = await agent(
-        `A feature spec has quality issues that blocked it before the Creator ran.
+      // Fix all fixable blocked features in parallel (each has disjoint spec/stuck files).
+      const fixResults = await parallel(
+        fixableBlocked.map(featureId => () => {
+          const attempts = specFixAttempts[featureId] || 0
+          log(`Auto-fixing spec for ${featureId} (attempt ${attempts + 1}/${MAX_SPEC_FIX_ATTEMPTS})...`)
+          return agent(
+            `A feature spec has quality issues that blocked it before the Creator ran.
 Your job: read the stuck reason, fix the spec and features.json entry, then reset the feature to TODO so it can be retried.
 
 Steps:
@@ -71,24 +127,45 @@ Steps:
 6. Fix [WARNING] issues where the fix is clear and unambiguous
 7. Run: node harness/update-status.js --feature ${featureId} --status TODO
 8. Run: rm -f harness/stuck/${featureId}_stuck_reason.md
-Return: { fixed: true } if you made changes and reset to TODO; { fixed: false } if the issues could not be resolved.`,
-        {
-          label: `spec-fix:${featureId}`,
-          phase: 'Build',
-          schema: { type: 'object', required: ['fixed'], properties: { fixed: { type: 'boolean' } } }
-        }
+Return: { featureId: "${featureId}", fixed: true } if you made changes and reset to TODO; { featureId: "${featureId}", fixed: false } if the issues could not be resolved.`,
+            {
+              label: `spec-fix:${featureId}`,
+              phase: 'Build',
+              schema: {
+                type: 'object',
+                required: ['featureId', 'fixed'],
+                properties: {
+                  featureId: { type: 'string' },
+                  fixed: { type: 'boolean' },
+                },
+              },
+            }
+          )
+        })
       )
 
-      specFixAttempts[featureId] = attempts + 1
+      let anyFixed = false
+      for (const res of (fixResults || [])) {
+        if (!res) continue
+        const { featureId, fixed } = res
+        specFixAttempts[featureId] = (specFixAttempts[featureId] || 0) + 1
+        if (fixed) {
+          const idx = blockedFeatures.indexOf(featureId)
+          if (idx !== -1) blockedFeatures.splice(idx, 1)
+          log(`Spec fixed for ${featureId} — retrying in next wave.`)
+          anyFixed = true
+        } else {
+          log(`Could not auto-fix spec for ${featureId} after attempt ${specFixAttempts[featureId]} — leaving blocked.`)
+        }
+      }
 
-      if (fixed && fixed.fixed) {
-        // Remove from blocked list so it can be retried
-        const idx = blockedFeatures.indexOf(featureId)
-        if (idx !== -1) blockedFeatures.splice(idx, 1)
-        log(`Spec fixed for ${featureId} — retrying in next loop iteration.`)
-        continue
-      } else {
-        log(`Could not auto-fix spec for ${featureId} after attempt ${attempts + 1} — leaving blocked.`)
+      if (anyFixed) {
+        // Re-read features.json to pick up any TODO resets made by spec-fix agents.
+        const refreshed = await agent(
+          'Read harness/features.json and return its parsed contents as a JSON object with a "features" key.',
+          { schema: FRONT_MATTER_SCHEMA, label: 're-read-after-spec-fix', phase: 'Build' }
+        )
+        if (refreshed) features = [...refreshed.features].sort((a, b) => (a.order || 999) - (b.order || 999))
         continue
       }
     }
@@ -97,20 +174,55 @@ Return: { fixed: true } if you made changes and reset to TODO; { fixed: false } 
     break
   }
 
-  if (result.success) {
-    completed++
-    log(`[${completed} done] ${result.feature} PASS`)
+  // Token budget gate: reserve 300k per wave member (mutation features include baseline + re-run).
+  if (budget.spent() >= tokenCap - wave.length * 300_000) {
+    log(`Near token cap (${budget.spent().toLocaleString()} / ${tokenCap.toLocaleString()}) — stopping.`)
+    break
   }
 
-  if (result.blocked) {
-    const featureId = result.feature
-    blockedFeatures.push(featureId)
-    log(`${featureId} BLOCKED (${blockedFeatures.length} total blocked)`)
-    if (stopOnBlocked) {
-      log('stopOnBlocked=true — halting.')
-      break
+  log(`Wave: [${wave.map(f => f.id).join(', ')}] (${wave.length} feature${wave.length > 1 ? 's' : ''})`)
+
+  // Dispatch all features in the wave concurrently.
+  // Each child workflow receives the current features snapshot (args.features) so it can
+  // skip its own read-features-json agent call.
+  const waveResults = await parallel(
+    wave.map(f => () => workflow({ scriptPath: 'harness/workflow.js' }, { feature: f.id, features }))
+  )
+
+  for (const result of (waveResults || [])) {
+    if (!result) {
+      log('A wave member returned null (agent death) — treating as BLOCKED.')
+      continue
+    }
+    if (result.success) {
+      completed++
+      log(`[${completed} done] ${result.feature} PASS`)
+    }
+    if (result.blocked) {
+      const featureId = result.feature
+      blockedFeatures.push(featureId)
+      log(`${featureId} BLOCKED (${blockedFeatures.length} total blocked)`)
+      if (stopOnBlocked) {
+        log('stopOnBlocked=true — halting.')
+        break
+      }
+    }
+    if (result.done) {
+      // Inner workflow found no buildable feature — shouldn't happen in wave mode
+      // since we selected targets explicitly, but handle gracefully.
+      log(`workflow() returned done=true for ${result.feature ?? '(unknown)'} — skipping.`)
     }
   }
+
+  if (stopOnBlocked && blockedFeatures.length > 0) break
+
+  // Re-read features.json after each wave to get ground truth from disk.
+  // Guards against silent update-status failures where in-memory state would diverge.
+  const refreshed = await agent(
+    'Read harness/features.json and return its parsed contents as a JSON object with a "features" key.',
+    { schema: FRONT_MATTER_SCHEMA, label: 're-read-post-wave', phase: 'Build' }
+  )
+  if (refreshed) features = [...refreshed.features].sort((a, b) => (a.order || 999) - (b.order || 999))
 }
 
 const finalBudget = budget.spent()
