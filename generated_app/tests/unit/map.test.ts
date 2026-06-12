@@ -1228,6 +1228,26 @@ describe("offsetPolylinePoints", () => {
     expect(result).toBe(pts);
   });
 
+  it("GIVEN a 3-point L-shaped way (N-S then E-W), WHEN offsetPolylinePoints called, THEN first point shifts perpendicular to N-S segment (lng changes, lat unchanged) and last point shifts perpendicular to E-W segment (lat changes, lng unchanged)", async () => {
+    const { offsetPolylinePoints } = await import("../../app/map");
+    // Road goes north then turns east
+    const pts: [number, number][] = [
+      [40.743, -74.032],
+      [40.744, -74.032],
+      [40.744, -74.031],
+    ];
+    // Sign east of the first segment's centre — triggers dir=1 (east/south-east offset)
+    const signLat = (40.743 + 40.744) / 2;
+    const signLng = -74.031; // well east of centre
+    const result = offsetPolylinePoints(pts, signLat, signLng, 4.0);
+    // First point: N-S segment → perpendicular is E-W → lng changes, lat stays put
+    expect(result[0][0]).toBeCloseTo(40.743, 5);   // lat nearly unchanged
+    expect(result[0][1]).not.toBeCloseTo(-74.032, 5); // lng shifted
+    // Last point: E-W segment → perpendicular is N-S → lat changes, lng stays put
+    expect(result[2][1]).toBeCloseTo(-74.031, 5);  // lng nearly unchanged
+    expect(result[2][0]).not.toBeCloseTo(40.744, 5); // lat shifted
+  });
+
   // ─── F-41 forcedDir tests ──────────────────────────────────────────────────
 
   it("F-41: GIVEN a N-S polyline, sign at midpoint (dot ≈ 0), forcedDir = 1, WHEN offsetPolylinePoints is called, THEN all returned points shift east (positive longitude delta)", async () => {
@@ -1532,15 +1552,27 @@ describe("F-34 violation highlights", () => {
     expect(colors).toContain("#f97316");
   });
 
-  it("GIVEN East=active and West=active, WHEN renderViolationHighlights, THEN one full-width red polyline (no split)", async () => {
+  it("GIVEN East=active and West=active, WHEN renderViolationHighlights, THEN two offset red polylines (no full-width)", async () => {
     const { initMap, initRoadGeometry, renderViolationHighlights } = await import("../../app/map");
     initMap();
     initRoadGeometry({ "BLOOMFIELD ST": [[[40.745, -74.044], [40.746, -74.044]]] });
     const WEST_ACTIVE: StreetCleaningEntry = { ...EAST_ACTIVE, side: "West" };
     renderViolationHighlights([EAST_ACTIVE, WEST_ACTIVE], NOW_STABLE);
     const L = (globalThis as Record<string, unknown>)["L"] as { polyline: ReturnType<typeof vi.fn> };
+    expect(L.polyline.mock.calls.length).toBe(2);
+    for (const call of L.polyline.mock.calls as [unknown, Record<string, unknown>][]) {
+      expect((call[1] as Record<string, unknown>)["color"]).toBe("#ef4444");
+    }
+  });
+
+  it("GIVEN East=active only (West not active or upcoming), WHEN renderViolationHighlights, THEN one offset red polyline on East side only", async () => {
+    const { initMap, initRoadGeometry, renderViolationHighlights } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "BLOOMFIELD ST": [[[40.745, -74.044], [40.746, -74.044]]] });
+    renderViolationHighlights([EAST_ACTIVE], NOW_STABLE);
+    const L = (globalThis as Record<string, unknown>)["L"] as { polyline: ReturnType<typeof vi.fn> };
     expect(L.polyline.mock.calls.length).toBe(1);
-    expect((L.polyline.mock.calls[0] as [unknown, Record<string, unknown>])[1]).toMatchObject({ color: "#ef4444", weight: 12 });
+    expect((L.polyline.mock.calls[0] as [unknown, Record<string, unknown>])[1]).toMatchObject({ color: "#ef4444" });
   });
 });
 
@@ -2158,6 +2190,74 @@ describe("F-42 getSnappedPinPosition parity offset", () => {
     expect(pin).toBeDefined();
     if (pin !== undefined) {
       expect(pin._lng).toBeGreaterThan(-74.030);
+    }
+  });
+});
+
+// ─── F-43 PIN_LATERAL_OFFSET_M pin distance ──────────────────────────────────
+
+describe("F-43 PIN_LATERAL_OFFSET_M pin distance", () => {
+  // N-S road segment: A = [40.740, -74.030], B = [40.741, -74.030]
+  // Right-perp: perpX = 1 (east), perpY = 0
+  // Odd address → dir=1 → pin shifts east (lng increases)
+
+  beforeEach(() => {
+    installLeafletMock();
+    vi.resetModules();
+  });
+
+  it("F-43: GIVEN odd address '101 BLOOMFIELD ST' on N-S road, WHEN renderSignPins is called, THEN pin lng offset from centerline ≈ PIN_LATERAL_OFFSET_M / (111320 * cos(lat))", async () => {
+    const { initMap, renderSignPins, initRoadGeometry, initStreetParity, PIN_LATERAL_OFFSET_M } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "BLOOMFIELD ST": [[[40.740, -74.030], [40.741, -74.030]]] });
+    initStreetParity({ "BLOOMFIELD ST": 1 });
+    const sign = makeSign({ address: "101 BLOOMFIELD ST", lat: 40.7405, lng: -74.030 });
+    renderSignPins([sign], NOW_STABLE);
+    const marker = mockMapInstance._layers.filter(
+      (l: MockMarker) => l._options["pane"] === "towSignPane"
+    )[0];
+    expect(marker).toBeDefined();
+    if (marker !== undefined) {
+      const cosLat = Math.cos(40.7405 * Math.PI / 180);
+      const expectedDLng = PIN_LATERAL_OFFSET_M / (111320 * cosLat);
+      expect(marker._lng).toBeCloseTo(-74.030 + expectedDLng, 6);
+    }
+  });
+
+  it("F-43: GIVEN odd address '101 BLOOMFIELD ST', WHEN renderSignPins is called, THEN pin offset from centerline is strictly greater than polyline offset (LATERAL_OFFSET_M)", async () => {
+    const { initMap, renderSignPins, initRoadGeometry, initStreetParity, PIN_LATERAL_OFFSET_M, LATERAL_OFFSET_M } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "BLOOMFIELD ST": [[[40.740, -74.030], [40.741, -74.030]]] });
+    initStreetParity({ "BLOOMFIELD ST": 1 });
+    const sign = makeSign({ address: "101 BLOOMFIELD ST", lat: 40.7405, lng: -74.030 });
+    renderSignPins([sign], NOW_STABLE);
+    const marker = mockMapInstance._layers.filter(
+      (l: MockMarker) => l._options["pane"] === "towSignPane"
+    )[0];
+    expect(marker).toBeDefined();
+    if (marker !== undefined) {
+      const cosLat = Math.cos(40.7405 * Math.PI / 180);
+      const polylineOffsetDeg = LATERAL_OFFSET_M / (111320 * cosLat);
+      expect(marker._lng - (-74.030)).toBeGreaterThan(polylineOffsetDeg);
+      void PIN_LATERAL_OFFSET_M; // reference to satisfy lint
+    }
+  });
+
+  it("F-43: GIVEN even address '100 BLOOMFIELD ST' (forcedDir=-1 → west), WHEN renderSignPins is called, THEN pin shifts west by PIN_LATERAL_OFFSET_M", async () => {
+    const { initMap, renderSignPins, initRoadGeometry, initStreetParity, PIN_LATERAL_OFFSET_M } = await import("../../app/map");
+    initMap();
+    initRoadGeometry({ "BLOOMFIELD ST": [[[40.740, -74.030], [40.741, -74.030]]] });
+    initStreetParity({ "BLOOMFIELD ST": 1 });
+    const sign = makeSign({ address: "100 BLOOMFIELD ST", lat: 40.7405, lng: -74.030 });
+    renderSignPins([sign], NOW_STABLE);
+    const marker = mockMapInstance._layers.filter(
+      (l: MockMarker) => l._options["pane"] === "towSignPane"
+    )[0];
+    expect(marker).toBeDefined();
+    if (marker !== undefined) {
+      const cosLat = Math.cos(40.7405 * Math.PI / 180);
+      const expectedDLng = PIN_LATERAL_OFFSET_M / (111320 * cosLat);
+      expect(marker._lng).toBeCloseTo(-74.030 - expectedDLng, 6);
     }
   });
 });

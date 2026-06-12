@@ -1034,7 +1034,7 @@
   {
     "id": "F-43",
     "name": "Fix: Move Tow Sign Pin Markers Further from Road onto Property Side",
-    "status": "TODO",
+    "status": "DONE",
     "order": 51,
     "depends_on": [
       "F-42"

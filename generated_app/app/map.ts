@@ -116,6 +116,8 @@ let _garageMarkersVisible: boolean = true;
 let _snowRouteLayers: LeafletLayer[] = [];
 let _snowRoutesVisible: boolean = true;
 let _streetParity: Record<string, 1 | -1> = {};
+let _lastCleaningEntries: StreetCleaningEntry[] = [];
+let _lastNowForHighlights: Date | null = null;
 const DEFAULT_ZOOM = 15;
 
 function dotScale(): number {
@@ -126,6 +128,9 @@ function dotScale(): number {
 // ─── Tow sign dot icons ───────────────────────────────────────────────────────
 
 export const LATERAL_OFFSET_M = 4.0;
+export const PIN_LATERAL_OFFSET_M = 18.0;
+const CLEANING_LANE_WIDTH_M = 3.5;
+const HOBOKEN_COS_LAT = Math.cos(40.744 * Math.PI / 180);
 
 const SPOT_COLOR = "#1d6fe3"; // blue — visually distinct from sign markers
 const POSITION_BASE_RADIUS = 7;
@@ -204,6 +209,8 @@ export function initMap(): LeafletMap {
   _snowRouteLayers = [];
   _snowRoutesVisible = true;
   _streetParity = {};
+  _lastCleaningEntries = [];
+  _lastNowForHighlights = null;
   map.createPane('towSignPane');
   const towSignPaneEl = map.getPane('towSignPane');
   if (towSignPaneEl !== undefined) towSignPaneEl.style.zIndex = '600';
@@ -236,6 +243,9 @@ export function initMap(): LeafletMap {
   let _zoomDebounce: ReturnType<typeof setTimeout> | null = null;
   map.on("zoomend", () => {
     updateIconScale();
+    if (_lastNowForHighlights !== null) {
+      renderViolationHighlights(_lastCleaningEntries, _lastNowForHighlights);
+    }
     if (_zoomDebounce !== null) clearTimeout(_zoomDebounce);
     _zoomDebounce = setTimeout(() => {
       track("map-zoomed", { zoom_level: map.getZoom() });
@@ -615,7 +625,7 @@ export function getSubsegment(
   // out-of-borough address that shares a street name with a Hoboken road),
   // return [] so renderTowSegments can use the orientation-correct heuristic
   // at the sign's actual GPS location instead of snapping to the wrong block.
-  const MAX_SNAP_M = 50;
+  const MAX_SNAP_M = 75;
   if (bestDist > MAX_SNAP_M) return [];
 
   const bestWay = ways[bestWayIdx];
@@ -775,11 +785,34 @@ export function offsetPolylinePoints(
     dir = dot > 0 ? 1 : -1;
   }
 
-  // Apply uniform offset to every point
-  const dLat = dir * offsetM * perpY_m / 111320;
-  const dLng = dir * offsetM * perpX_m / (111320 * cosLat);
-
-  return pts.map(([lat, lng]): [number, number] => [lat + dLat, lng + dLng]);
+  // Apply per-point local-tangent offset so curved roads stay within the road at all zoom levels
+  return pts.map(([lat, lng], i): [number, number] => {
+    let tY: number;
+    let tX: number;
+    if (i === 0) {
+      tY = (pts[1][0] - pts[0][0]) * 111320;
+      tX = (pts[1][1] - pts[0][1]) * 111320 * cosLat;
+    } else if (i === pts.length - 1) {
+      tY = (pts[i][0] - pts[i - 1][0]) * 111320;
+      tX = (pts[i][1] - pts[i - 1][1]) * 111320 * cosLat;
+    } else {
+      const aY = (pts[i][0] - pts[i - 1][0]) * 111320;
+      const aX = (pts[i][1] - pts[i - 1][1]) * 111320 * cosLat;
+      const aLen = Math.sqrt(aY * aY + aX * aX);
+      const bY = (pts[i + 1][0] - pts[i][0]) * 111320;
+      const bX = (pts[i + 1][1] - pts[i][1]) * 111320 * cosLat;
+      const bLen = Math.sqrt(bY * bY + bX * bX);
+      tY = (aLen > 0 ? aY / aLen : 0) + (bLen > 0 ? bY / bLen : 0);
+      tX = (aLen > 0 ? aX / aLen : 0) + (bLen > 0 ? bX / bLen : 0);
+    }
+    const tLen = Math.sqrt(tY * tY + tX * tX);
+    if (tLen === 0) return [lat, lng];
+    const lPerpX_m = tY / tLen;
+    const lPerpY_m = -tX / tLen;
+    const dLat = dir * offsetM * lPerpY_m / 111320;
+    const dLng = dir * offsetM * lPerpX_m / (111320 * cosLat);
+    return [lat + dLat, lng + dLng];
+  });
 }
 
 // ─── F-23 / F-24 renderTowSegments ───────────────────────────────────────────
@@ -840,29 +873,86 @@ function getSnappedPinPosition(sign: Sign): [number, number] {
     }
   }
 
-  // Apply parity-based lateral offset to move pin from centerline to curb.
-  const numMatch = sign.address.match(/^(\d+)/);
-  if (numMatch !== null) {
-    const streetKey = normalizeToGeometryKey(
-      sign.address.replace(/^\d[\d-]*\s+/, "").trim()
-    );
-    const oddDir = _streetParity[streetKey];
-    if (oddDir !== undefined) {
-      const isOdd = parseInt(numMatch[1], 10) % 2 === 1;
-      const dir: 1 | -1 = isOdd ? oddDir : (oddDir === 1 ? -1 : 1);
-      const cosLat2 = Math.cos(projPt[0] * Math.PI / 180);
-      const dYseg = bestB[0] - bestA[0];
-      const dXseg = (bestB[1] - bestA[1]) * cosLat2;
-      const lenSeg = Math.sqrt(dYseg * dYseg + dXseg * dXseg);
-      if (lenSeg > 0) {
-        // Right-perpendicular — same convention as offsetPolylinePoints
-        const perpX = dYseg / lenSeg;   // east component
-        const perpY = -dXseg / lenSeg;  // north component
+  // Move projPt to the arc midpoint of the tow segment so the pin sits at the
+  // visual centre of the line rather than at the geocoded-address end.
+  // tangentA/tangentB track the local road segment at the midpoint so the
+  // perpendicular direction matches the actual road there, not the initial
+  // nearest-segment endpoints which may be on a different part of the way.
+  let tangentA: [number, number] = bestA;
+  let tangentB: [number, number] = bestB;
+
+  const addrMatchRange = sign.address.match(/^(\d+)-(\d+)\s+/);
+  const addrRange = addrMatchRange
+    ? Math.max(0, parseInt(addrMatchRange[2], 10) - parseInt(addrMatchRange[1], 10))
+    : 0;
+  const halfLengthM = Math.max(5, (addrRange / 2 + 1) * 4);
+  const waypoints = getSubsegment(ways, sign.lat, sign.lng, halfLengthM);
+  if (waypoints.length >= 2) {
+    const cosLat0 = Math.cos(waypoints[0][0] * Math.PI / 180);
+    let totalArc = 0;
+    const segArcs: number[] = [0];
+    for (let i = 1; i < waypoints.length; i++) {
+      const dy = (waypoints[i][0] - waypoints[i - 1][0]) * 111320;
+      const dx = (waypoints[i][1] - waypoints[i - 1][1]) * 111320 * cosLat0;
+      totalArc += Math.sqrt(dy * dy + dx * dx);
+      segArcs.push(totalArc);
+    }
+    const halfArc = totalArc / 2;
+    for (let i = 1; i < waypoints.length; i++) {
+      if (segArcs[i] >= halfArc) {
+        const span = segArcs[i] - segArcs[i - 1];
+        const frac = span > 0 ? (halfArc - segArcs[i - 1]) / span : 0;
         projPt = [
-          projPt[0] + dir * LATERAL_OFFSET_M * perpY / 111320,
-          projPt[1] + dir * LATERAL_OFFSET_M * perpX / (111320 * cosLat2),
+          waypoints[i - 1][0] + frac * (waypoints[i][0] - waypoints[i - 1][0]),
+          waypoints[i - 1][1] + frac * (waypoints[i][1] - waypoints[i - 1][1]),
         ];
+        tangentA = waypoints[i - 1];
+        tangentB = waypoints[i];
+        break;
       }
+    }
+  }
+
+  // Apply lateral offset using the local road tangent at the arc midpoint.
+  const cosLat2 = Math.cos(projPt[0] * Math.PI / 180);
+  const dYseg = tangentB[0] - tangentA[0];
+  const dXseg = (tangentB[1] - tangentA[1]) * cosLat2;
+  const lenSeg = Math.sqrt(dYseg * dYseg + dXseg * dXseg);
+  if (lenSeg > 0) {
+    // Right-perpendicular unit vector (same convention as offsetPolylinePoints)
+    const perpX = dYseg / lenSeg;   // east component
+    const perpY = -dXseg / lenSeg;  // north component
+
+    // Determine which side of the road the sign is on.
+    // Primary: parity table lookup. Fallback: dot-product from geocoded coords.
+    let dir: 1 | -1 | undefined;
+    const numMatch = sign.address.match(/^(\d+)/);
+    if (numMatch !== null) {
+      const streetKey = normalizeToGeometryKey(
+        sign.address.replace(/^\d[\d-]*\s+/, "").trim()
+      );
+      const oddDir = _streetParity[streetKey];
+      if (oddDir !== undefined) {
+        const isOdd = parseInt(numMatch[1], 10) % 2 === 1;
+        dir = isOdd ? oddDir : (oddDir === 1 ? -1 : 1);
+      }
+    }
+    // Fallback when street is absent from parity table: use sign's geocoded
+    // position relative to the original road snap to determine curb side.
+    if (dir === undefined) {
+      const signDY = (sign.lat - projPt[0]) * 111320;
+      const signDX = (sign.lng - projPt[1]) * 111320 * cosLat2;
+      const dot = signDX * perpX + signDY * perpY;
+      if (Math.abs(dot) >= 1e-9) {
+        dir = dot > 0 ? 1 : -1;
+      }
+    }
+
+    if (dir !== undefined) {
+      projPt = [
+        projPt[0] + dir * PIN_LATERAL_OFFSET_M * perpY / 111320,
+        projPt[1] + dir * PIN_LATERAL_OFFSET_M * perpX / (111320 * cosLat2),
+      ];
     }
   }
 
@@ -1034,13 +1124,30 @@ function drawStreetHighlight(street: string, color: string, opacity: number, sid
   if (ways === undefined || ways.length === 0) return;
   const L = getL();
   const merged = mergeWays(ways);
-  const weight = side !== null ? 7 : 12;
+
+  // Scale polyline weight and offset to fill the relevant lane at the current zoom.
+  // tileBoost compensates for OSM tiles rendering roads at roughly constant pixel
+  // width regardless of zoom: zoom 18 = geographic (1.0×), zoom 17 = 2.0×,
+  // zoom ≤16 = 3.0×. Split curb is always used when side is specified — falling
+  // back to centerline stacks both East+West layers and doubles opacity.
+  const zoom = _map !== null ? _map.getZoom() : DEFAULT_ZOOM;
+  const mPerPx = 40075000 * HOBOKEN_COS_LAT / (Math.pow(2, zoom) * 256);
+  const tileBoost = zoom >= 18 ? 1.0 : zoom >= 17 ? 2.0 : 3.0;
+  const effectiveLaneM = CLEANING_LANE_WIDTH_M * tileBoost;
+  const laneWidthPx = Math.max(1, Math.round(effectiveLaneM / mPerPx));
+  const useLaneSplit = side !== null;
+  const weight = side === null ? Math.max(3, laneWidthPx * 2) : Math.max(2, laneWidthPx);
+  const drawOpacity = opacity;
+  const MIN_SPLIT_OFFSET_PX = 2;
+  const offsetM = useLaneSplit
+    ? Math.max(effectiveLaneM / 2, MIN_SPLIT_OFFSET_PX * mPerPx)
+    : 0;
 
   for (const way of merged) {
     if (way.length === 0) continue;
     let pts: [number, number][] = way;
 
-    if (side !== null) {
+    if (side !== null && offsetM > 0) {
       const mid = way[Math.floor(way.length / 2)];
       if (mid !== undefined) {
         const DELTA = 0.0001;
@@ -1050,11 +1157,11 @@ function drawStreetHighlight(street: string, color: string, opacity: number, sid
         else if (side === "West")  refLng -= DELTA;
         else if (side === "North") refLat += DELTA;
         else if (side === "South") refLat -= DELTA;
-        pts = offsetPolylinePoints(way, refLat, refLng, LATERAL_OFFSET_M);
+        pts = offsetPolylinePoints(way, refLat, refLng, offsetM);
       }
     }
 
-    const layer = L.polyline(pts, { color, weight, opacity });
+    const layer = L.polyline(pts, { color, weight, opacity: drawOpacity });
     _violationLayers.push(layer);
     if (_violationHighlightsVisible && _map !== null) {
       layer.addTo(_map);
@@ -1073,6 +1180,8 @@ export function renderViolationHighlights(
   cleaningEntries: StreetCleaningEntry[],
   now: Date
 ): void {
+  _lastCleaningEntries = cleaningEntries;
+  _lastNowForHighlights = now;
   clearViolationHighlights();
   if (_map === null) return;
 
@@ -1102,7 +1211,7 @@ export function renderViolationHighlights(
 
     if (!hasActive && !hasUpcoming) continue;
 
-    if (hasActive && hasUpcoming && allSpecific && sideEntries.length > 1) {
+    if (allSpecific && sideEntries.length > 0) {
       for (const [sd, status] of sideEntries) {
         const color   = status === "active" ? "#ef4444" : "#f97316";
         const opacity = status === "active" ? 0.28 : 0.22;
