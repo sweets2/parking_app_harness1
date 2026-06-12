@@ -255,18 +255,26 @@ export function initMap(): LeafletMap {
     }, 300);
   });
 
-  // Suppress accidental blue-dot placement immediately after a pinch-to-zoom.
-  // Leaflet fires a synthetic click on touchend; guard it with a 500 ms window
-  // whenever 2+ fingers were involved, matching the Google Maps / Apple Maps convention.
+  // Suppress accidental blue-dot placement and camera snap after pinch-to-zoom.
+  // Two guards work together:
+  //   1. _activeTouches >= 2: catches clicks that Leaflet fires synchronously
+  //      inside its own touchend handler — before our touchend handler runs.
+  //   2. _pinchSuppressUntil: catches clicks that Leaflet fires asynchronously
+  //      after touchend (via setTimeout or browser click synthesis).
+  // We set _pinchSuppressUntil on touchstart (not just touchend) so it is
+  // already armed when Leaflet's touchend handler fires any synthetic click.
   const container = map.getContainer();
   container.addEventListener("touchstart", (e: TouchEvent) => {
     _activeTouches = e.touches.length;
+    if (e.touches.length >= 2) {
+      _pinchSuppressUntil = Date.now() + 1000;
+    }
   }, { passive: true });
-  container.addEventListener("touchend", (_e: TouchEvent) => {
+  container.addEventListener("touchend", (e: TouchEvent) => {
     if (_activeTouches >= 2) {
       _pinchSuppressUntil = Date.now() + 500;
     }
-    _activeTouches = 0;
+    _activeTouches = e.touches.length;
   }, { passive: true });
 
   return map;
@@ -470,6 +478,7 @@ export function registerMapClickHandler(
   if (_map === null) return;
   _map.off("click");
   _map.on("click", (e) => {
+    if (_activeTouches >= 2) return;
     if (_pinchSuppressUntil !== null && Date.now() < _pinchSuppressUntil) return;
     const ev = e as { latlng: LeafletLatLng };
     callback(ev.latlng.lat, ev.latlng.lng);
