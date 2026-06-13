@@ -276,15 +276,8 @@ html, body {
   background: #f3f4f6;
 }
 
-.tow-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #cc0000;
-  border: 1.5px solid #fff;
-  box-shadow: 0 0 0 1.5px rgba(204, 0, 0, 0.35);
+.tow-sign-icon {
   flex-shrink: 0;
-  transition: background 0.15s, box-shadow 0.15s;
 }
 
 .tow-label {
@@ -311,16 +304,7 @@ html, body {
 
 /* OFF state */
 #tow-legend.tow-off #tow-toggle {
-  border-color: #e5e7eb;
-}
-
-#tow-legend.tow-off .tow-dot {
-  background: #9ca3af;
-  box-shadow: none;
-}
-
-#tow-legend.tow-off .tow-status {
-  color: #9ca3af;
+  opacity: 0.35;
 }
 
 /* ─── Upcoming tow zones legend ─── */
@@ -347,15 +331,8 @@ html, body {
   background: #f3f4f6;
 }
 
-.upcoming-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #f97316;
-  border: 1.5px solid #fff;
-  box-shadow: 0 0 0 1.5px rgba(249, 115, 22, 0.35);
+.upcoming-sign-icon {
   flex-shrink: 0;
-  transition: background 0.15s, box-shadow 0.15s;
 }
 
 .upcoming-label {
@@ -382,16 +359,7 @@ html, body {
 
 /* OFF state */
 #upcoming-legend.upcoming-off #upcoming-toggle {
-  border-color: #e5e7eb;
-}
-
-#upcoming-legend.upcoming-off .upcoming-dot {
-  background: #9ca3af;
-  box-shadow: none;
-}
-
-#upcoming-legend.upcoming-off .upcoming-status {
-  color: #9ca3af;
+  opacity: 0.35;
 }
 
 /* ─── Street violation highlights legend ─── */
@@ -437,10 +405,7 @@ html, body {
 }
 
 /* OFF state */
-#violation-legend.violation-off #violation-toggle { border-color: #e5e7eb; }
-#violation-legend.violation-off .violation-road-white,
-#violation-legend.violation-off .violation-road-fill { display: none; }
-#violation-legend.violation-off .violation-status { color: #9ca3af; }
+#violation-legend.violation-off #violation-toggle { opacity: 0.35; }
 
 /* ─── Municipal Garages legend ─── */
 #garage-legend {
@@ -493,9 +458,7 @@ html, body {
   transition: color 0.15s;
 }
 
-#garage-legend.garage-off #garage-toggle { border-color: #e5e7eb; }
-#garage-legend.garage-off .garage-pin { opacity: 0.35; }
-#garage-legend.garage-off .garage-status { color: #9ca3af; }
+#garage-legend.garage-off #garage-toggle { opacity: 0.35; }
 
 #snow-legend {
 }
@@ -518,15 +481,8 @@ html, body {
 
 #snow-toggle:active { background: #f3f4f6; }
 
-.snow-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #3b82f6;
-  border: 1.5px solid #fff;
-  box-shadow: 0 0 0 1.5px rgba(59, 130, 246, 0.35);
+.snow-road-icon {
   flex-shrink: 0;
-  transition: background 0.15s, box-shadow 0.15s;
 }
 
 .snow-label {
@@ -551,9 +507,7 @@ html, body {
   transition: color 0.15s;
 }
 
-#snow-legend.snow-off #snow-toggle { border-color: #e5e7eb; }
-#snow-legend.snow-off .snow-dot { background: #9ca3af; box-shadow: none; }
-#snow-legend.snow-off .snow-status { color: #9ca3af; }
+#snow-legend.snow-off #snow-toggle { opacity: 0.35; }
 
 
 .sp-block--active {
