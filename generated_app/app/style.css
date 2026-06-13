@@ -461,15 +461,11 @@ html, body {
 
 #garage-toggle:active { background: #f3f4f6; }
 
-.garage-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  background: #2563eb;
-  border: 1.5px solid #fff;
-  box-shadow: 0 0 0 1.5px rgba(37, 99, 235, 0.35);
+#garage-toggle .garage-pin {
+  font-size: 18px;
+  line-height: 1;
   flex-shrink: 0;
-  transition: background 0.15s, box-shadow 0.15s;
+  transition: opacity 0.15s;
 }
 
 .garage-label {
@@ -495,7 +491,7 @@ html, body {
 }
 
 #garage-legend.garage-off #garage-toggle { border-color: #e5e7eb; }
-#garage-legend.garage-off .garage-dot { background: #9ca3af; box-shadow: none; }
+#garage-legend.garage-off .garage-pin { opacity: 0.35; }
 #garage-legend.garage-off .garage-status { color: #9ca3af; }
 
 #snow-legend {

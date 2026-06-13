@@ -623,9 +623,8 @@ export async function initBrowserApp(): Promise<void> {
 
   // Wire map click handler — every click saves (or moves) the spot.
   registerMapClickHandler((lat: number, lng: number) => {
-    // Reset so renderState re-centers and re-opens the popup for the new location.
-    _centeredOnSpot = false;
-    track(appMode === "parked" ? "spot-moved" : "spot-saved");
+    const wasParked = appMode === "parked";
+    track(wasParked ? "spot-moved" : "spot-saved");
     const spot: SavedSpot = {
       lat,
       lng,
@@ -633,6 +632,20 @@ export async function initBrowserApp(): Promise<void> {
       address: null,
     };
     app.onSaveSpot(spot);
+    // When already parked, _centeredOnSpot stays true so renderState won't
+    // re-center (preventing snaps on zoom/pan). Center and re-open the popup
+    // explicitly here for intentional dot moves.
+    if (wasParked) {
+      centerOnSpot(spot);
+      void getStreetName(lat, lng).then((road) => {
+        if (road !== null) {
+          const detectSegment = buildDetectSegmentCallback(lat, lng, road);
+          showStreetPopup(lat, lng, road, findCleaningEntries(road), detectSegment, devNow());
+        }
+      });
+    }
+    // Browsing → parked transition: _centeredOnSpot is false (reset by the
+    // browsing branch of renderState), so renderState handles center + popup.
   });
 
   // Start 60-second tick; auto-refresh data when it's from a previous UTC calendar day.
