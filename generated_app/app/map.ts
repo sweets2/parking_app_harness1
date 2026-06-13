@@ -238,10 +238,6 @@ export function initMap(): LeafletMap {
     if (_spotMarker !== null) {
       _spotMarker.setRadius(Math.round(SPOT_BASE_RADIUS * ds));
     }
-    if (_streetPopup !== null) {
-      _streetPopup.remove();
-      _streetPopup.openOn(map);
-    }
   };
   let _zoomDebounce: ReturnType<typeof setTimeout> | null = null;
   map.on("zoomend", () => {
