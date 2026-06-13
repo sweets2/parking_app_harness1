@@ -495,16 +495,12 @@ export async function initBrowserApp(): Promise<void> {
   const towLegend = document.getElementById("tow-legend");
   const towToggle = document.getElementById("tow-toggle");
   if (towLegend !== null && towToggle !== null) {
-    const towStatus = towToggle.querySelector<HTMLElement>(".tow-status");
     towToggle.addEventListener("click", () => {
       const isOn = !towLegend.classList.contains("tow-off");
       setTowSignsVisible(!isOn);
       track("tow-zones-toggled", { enabled: !isOn });
       towLegend.classList.toggle("tow-off", isOn);
       towToggle.setAttribute("aria-pressed", String(!isOn));
-      if (towStatus !== null) {
-        towStatus.textContent = isOn ? "Disabled" : "Enabled";
-      }
     });
   }
 
@@ -512,16 +508,12 @@ export async function initBrowserApp(): Promise<void> {
   const violationLegend = document.getElementById("violation-legend");
   const violationToggle = document.getElementById("violation-toggle");
   if (violationLegend !== null && violationToggle !== null) {
-    const violationStatus = violationToggle.querySelector<HTMLElement>(".violation-status");
     violationToggle.addEventListener("click", () => {
       const isOn = !violationLegend.classList.contains("violation-off");
       setViolationHighlightsVisible(!isOn);
       track("violation-highlights-toggled", { enabled: !isOn });
       violationLegend.classList.toggle("violation-off", isOn);
       violationToggle.setAttribute("aria-pressed", String(!isOn));
-      if (violationStatus !== null) {
-        violationStatus.textContent = isOn ? "Disabled" : "Enabled";
-      }
     });
   }
 
@@ -534,18 +526,10 @@ export async function initBrowserApp(): Promise<void> {
     track("upcoming-signs-toggled", { enabled: next });
     upcomingToggle.setAttribute("aria-pressed", String(next));
     document.getElementById("upcoming-legend")?.classList.toggle("upcoming-off", !next);
-    const status = document.getElementById("upcoming-legend")?.querySelector(".upcoming-status");
-    if (status !== null && status !== undefined) {
-      status.textContent = next ? "Enabled" : "Hidden";
-    }
   });
   // Upcoming signs off by default — sync legend to match
   upcomingToggle?.setAttribute("aria-pressed", "false");
   document.getElementById("upcoming-legend")?.classList.add("upcoming-off");
-  const upcomingInitStatus = document.getElementById("upcoming-legend")?.querySelector(".upcoming-status");
-  if (upcomingInitStatus !== null && upcomingInitStatus !== undefined) {
-    upcomingInitStatus.textContent = "Hidden";
-  }
 
   // Wire garage toggle
   const garageToggle = document.getElementById("garage-toggle");
@@ -556,10 +540,6 @@ export async function initBrowserApp(): Promise<void> {
     track("garages-toggled", { enabled: next });
     garageToggle.setAttribute("aria-pressed", String(next));
     document.getElementById("garage-legend")?.classList.toggle("garage-off", !next);
-    const status = document.getElementById("garage-legend")?.querySelector(".garage-status");
-    if (status !== null && status !== undefined) {
-      status.textContent = next ? "Enabled" : "Hidden";
-    }
   });
 
   // Wire snow routes toggle
@@ -571,10 +551,6 @@ export async function initBrowserApp(): Promise<void> {
     track("snow-routes-toggled", { enabled: next });
     snowToggle.setAttribute("aria-pressed", String(next));
     document.getElementById("snow-legend")?.classList.toggle("snow-off", !next);
-    const status = document.getElementById("snow-legend")?.querySelector(".snow-status");
-    if (status !== null && status !== undefined) {
-      status.textContent = next ? "Enabled" : "Hidden";
-    }
   });
 
   // Wire "Get Current Location" button

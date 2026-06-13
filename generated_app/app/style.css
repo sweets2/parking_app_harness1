@@ -293,15 +293,6 @@ html, body {
   color: #1e293b;
 }
 
-.tow-status {
-  font-size: 10px;
-  font-weight: 600;
-  color: #16a34a;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  transition: color 0.15s;
-}
-
 /* OFF state */
 #tow-legend.tow-off #tow-toggle {
   opacity: 0.35;
@@ -348,15 +339,6 @@ html, body {
   color: #1e293b;
 }
 
-.upcoming-status {
-  font-size: 10px;
-  font-weight: 600;
-  color: #16a34a;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  transition: color 0.15s;
-}
-
 /* OFF state */
 #upcoming-legend.upcoming-off #upcoming-toggle {
   opacity: 0.35;
@@ -395,15 +377,6 @@ html, body {
   line-height: 1.2;
 }
 .violation-title { font-size: 12px; font-weight: 700; color: #1e293b; text-align: center; }
-.violation-status {
-  font-size: 10px;
-  font-weight: 600;
-  color: #16a34a;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  transition: color 0.15s;
-}
-
 /* OFF state */
 #violation-legend.violation-off #violation-toggle { opacity: 0.35; }
 
@@ -449,15 +422,6 @@ html, body {
   color: #1e293b;
 }
 
-.garage-status {
-  font-size: 10px;
-  font-weight: 600;
-  color: #16a34a;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  transition: color 0.15s;
-}
-
 #garage-legend.garage-off #garage-toggle { opacity: 0.35; }
 
 #snow-legend {
@@ -496,15 +460,6 @@ html, body {
   font-size: 12px;
   font-weight: 700;
   color: #1e293b;
-}
-
-.snow-status {
-  font-size: 10px;
-  font-weight: 600;
-  color: #16a34a;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  transition: color 0.15s;
 }
 
 #snow-legend.snow-off #snow-toggle { opacity: 0.35; }
@@ -630,13 +585,18 @@ html, body {
 
 /* ─── Mobile responsive popup scaling ─────────────────────────────────────── */
 @media (max-width: 480px) {
-  .sp-wrap        { font-size: 11px; }
-  .sp-street      { font-size: 14px; }
+  .sp-wrap        { font-size: 11px; line-height: 1.3; }
+  .sp-street      { font-size: 14px; margin-bottom: 4px; }
   .sp-label       { font-size: 13px; }
   .sp-icon        { font-size: 13px; }
   .sp-loc-label   { font-size: 10px; }
+  .sp-header      { margin-bottom: 0; gap: 3px; }
+  .sp-sep         { margin: 3px 0; }
+  .sp-entry       { margin-bottom: 1px; gap: 5px; }
   .dir-badge      { font-size: 10px; min-width: 22px; padding: 1px 3px; }
   .dir-n, .dir-s  { min-width: 18px; }
+  .leaflet-popup-content-wrapper { max-width: min(260px, 80vw); }
+  .leaflet-popup-content         { margin: 6px 8px; }
   .tz-wrap        { font-size: 11px; }
   .tz-title       { font-size: 13px; }
   .tz-address     { font-size: 12px; }

@@ -168,15 +168,6 @@ export function signEmoji(reason: string, active = true): string {
   );
 }
 
-// ─── F-35 Upcoming sign icon ──────────────────────────────────────────────────
-
-const UPCOMING_SIGN_ICON =
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20">` +
-  `<circle cx="50" cy="50" r="43" fill="none" stroke="#f97316" stroke-width="13"/>` +
-  `<text x="50" y="70" text-anchor="middle" font-family="Arial Black,Impact,sans-serif" font-size="62" font-weight="900" fill="#1a1a1a">P</text>` +
-  `<rect x="-8" y="44" width="116" height="11" rx="5" fill="#f97316" transform="rotate(-35 50 50)"/>` +
-  `</svg>`;
-
 // ─── F-07.1 initMap ───────────────────────────────────────────────────────────
 
 /**
