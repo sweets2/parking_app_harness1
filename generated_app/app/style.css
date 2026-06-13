@@ -239,14 +239,21 @@ html, body {
   cursor: default;
 }
 
-/* ─── Tow zones legend toggle ─────────────────────────────────────────────── */
+/* ─── Legend stack (bottom-left) ──────────────────────────────────────────── */
 
-/* Sits below locate button (84px + 34px button + 8px gap = 126px) */
-#tow-legend {
+#legend-stack {
   position: fixed;
-  top: 126px;
+  bottom: 72px;
   left: 10px;
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ─── Tow zones legend toggle ─────────────────────────────────────────────── */
+
+#tow-legend {
 }
 
 #tow-toggle {
@@ -318,10 +325,6 @@ html, body {
 
 /* ─── Upcoming tow zones legend ─── */
 #upcoming-legend {
-  position: fixed;
-  top: 168px;
-  left: 10px;
-  z-index: 1000;
 }
 
 #upcoming-toggle {
@@ -393,10 +396,6 @@ html, body {
 
 /* ─── Street violation highlights legend ─── */
 #violation-legend {
-  position: fixed;
-  top: 210px;
-  left: 10px;
-  z-index: 1000;
 }
 
 #violation-toggle {
@@ -445,10 +444,6 @@ html, body {
 
 /* ─── Municipal Garages legend ─── */
 #garage-legend {
-  position: fixed;
-  top: 267px;
-  left: 10px;
-  z-index: 1000;
 }
 
 #garage-toggle {
@@ -503,10 +498,6 @@ html, body {
 #garage-legend.garage-off .garage-status { color: #9ca3af; }
 
 #snow-legend {
-  position: fixed;
-  top: 309px;
-  left: 10px;
-  z-index: 1000;
 }
 
 #snow-toggle {
