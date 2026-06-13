@@ -226,7 +226,7 @@ html, body {
 /* ─── Get Current Location button ─────────────────────────── */
 #locate-control {
   position: fixed;
-  top: 84px;
+  top: 100px;
   left: 10px;
   z-index: 1000;
 }
@@ -235,8 +235,8 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   padding: 0;
   background: rgba(255, 255, 255, 0.96);
   border: 1.5px solid #d1d5db;
@@ -246,8 +246,12 @@ html, body {
   color: #374151;
 }
 
+#locate-btn:hover {
+  background: #f4f4f4;
+}
+
 #locate-btn:active {
-  background: #f3f4f6;
+  background: #e8e8e8;
 }
 
 #locate-btn:disabled {
@@ -255,11 +259,18 @@ html, body {
   cursor: default;
 }
 
+.leaflet-control-zoom a {
+  width: 38px !important;
+  height: 38px !important;
+  line-height: 38px !important;
+  font-size: 18px !important;
+}
+
 /* ─── Legend stack (bottom-left) ──────────────────────────────────────────── */
 
 #legend-stack {
   position: fixed;
-  bottom: 72px;
+  top: 150px;
   left: 10px;
   z-index: 1000;
   display: flex;
@@ -275,16 +286,18 @@ html, body {
 #tow-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 130px;
-  padding: 7px 12px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1.5px solid #d1d5db;
+  justify-content: center;
+  width: 46px;
+  height: 36px;
+  padding: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.82) 0%, rgba(200,218,232,0.72) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(60,100,130,0.80);
   border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
-  transition: opacity 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.16);
+  transition: opacity 0.15s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
   user-select: none;
 }
 
@@ -314,7 +327,7 @@ html, body {
 
 /* OFF state */
 #tow-legend.tow-off #tow-toggle {
-  opacity: 0.55;
+  opacity: 0.35; border: 1px solid rgba(60,100,130,0.40); box-shadow: none; background: rgba(255,255,255,0.25); backdrop-filter: none; -webkit-backdrop-filter: none;
 }
 
 /* ─── Upcoming tow zones legend ─── */
@@ -324,16 +337,18 @@ html, body {
 #upcoming-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 130px;
-  padding: 7px 12px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1.5px solid #d1d5db;
+  justify-content: center;
+  width: 46px;
+  height: 36px;
+  padding: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.82) 0%, rgba(200,218,232,0.72) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(60,100,130,0.80);
   border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
-  transition: opacity 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.16);
+  transition: opacity 0.15s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
   user-select: none;
 }
 
@@ -363,7 +378,7 @@ html, body {
 
 /* OFF state */
 #upcoming-legend.upcoming-off #upcoming-toggle {
-  opacity: 0.55;
+  opacity: 0.35; border: 1px solid rgba(60,100,130,0.40); box-shadow: none; background: rgba(255,255,255,0.25); backdrop-filter: none; -webkit-backdrop-filter: none;
 }
 
 /* ─── Street violation highlights legend ─── */
@@ -373,16 +388,18 @@ html, body {
 #violation-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 130px;
-  padding: 7px 12px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1.5px solid #d1d5db;
+  justify-content: center;
+  width: 46px;
+  height: 36px;
+  padding: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.82) 0%, rgba(200,218,232,0.72) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(60,100,130,0.80);
   border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
-  transition: opacity 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.16);
+  transition: opacity 0.15s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
   user-select: none;
 }
 #violation-toggle:active { background: #f3f4f6; }
@@ -401,7 +418,7 @@ html, body {
 }
 .violation-title { font-size: 12px; font-weight: 700; color: #1e293b; text-align: left; font-family: 'Roboto', sans-serif; }
 /* OFF state */
-#violation-legend.violation-off #violation-toggle { opacity: 0.55; }
+#violation-legend.violation-off #violation-toggle { opacity: 0.35; border: 1px solid rgba(60,100,130,0.40); box-shadow: none; background: rgba(255,255,255,0.25); backdrop-filter: none; -webkit-backdrop-filter: none; }
 
 /* ─── Municipal Garages legend ─── */
 #garage-legend {
@@ -410,23 +427,25 @@ html, body {
 #garage-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 130px;
-  padding: 7px 12px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1.5px solid #d1d5db;
+  justify-content: center;
+  width: 46px;
+  height: 36px;
+  padding: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.82) 0%, rgba(200,218,232,0.72) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(60,100,130,0.80);
   border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
-  transition: opacity 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.16);
+  transition: opacity 0.15s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
   user-select: none;
 }
 
 #garage-toggle:active { background: #f3f4f6; }
 
 #garage-toggle .garage-pin {
-  font-size: 18px;
+  font-size: 22px;
   line-height: 1;
   flex-shrink: 0;
   transition: opacity 0.15s;
@@ -448,7 +467,7 @@ html, body {
   text-align: left;
 }
 
-#garage-legend.garage-off #garage-toggle { opacity: 0.55; }
+#garage-legend.garage-off #garage-toggle { opacity: 0.35; border: 1px solid rgba(60,100,130,0.40); box-shadow: none; background: rgba(255,255,255,0.25); backdrop-filter: none; -webkit-backdrop-filter: none; }
 
 #snow-legend {
 }
@@ -456,16 +475,18 @@ html, body {
 #snow-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 130px;
-  padding: 7px 12px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1.5px solid #d1d5db;
+  justify-content: center;
+  width: 46px;
+  height: 36px;
+  padding: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.82) 0%, rgba(200,218,232,0.72) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(60,100,130,0.80);
   border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
-  transition: opacity 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.16);
+  transition: opacity 0.15s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
   user-select: none;
 }
 
@@ -491,7 +512,23 @@ html, body {
   text-align: left;
 }
 
-#snow-legend.snow-off #snow-toggle { opacity: 0.55; }
+#snow-legend.snow-off #snow-toggle { opacity: 0.35; border: 1px solid rgba(60,100,130,0.40); box-shadow: none; background: rgba(255,255,255,0.25); backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+#tow-toggle:hover,
+#upcoming-toggle:hover,
+#violation-toggle:hover,
+#garage-toggle:hover,
+#snow-toggle:hover {
+  background: linear-gradient(160deg, rgba(215,232,246,0.92) 0%, rgba(168,198,220,0.84) 100%);
+}
+
+#tow-legend.tow-off #tow-toggle:hover,
+#upcoming-legend.upcoming-off #upcoming-toggle:hover,
+#violation-legend.violation-off #violation-toggle:hover,
+#garage-legend.garage-off #garage-toggle:hover,
+#snow-legend.snow-off #snow-toggle:hover {
+  opacity: 0.60;
+}
 
 
 .sp-block--active {
